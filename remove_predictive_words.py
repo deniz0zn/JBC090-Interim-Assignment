@@ -1,3 +1,36 @@
+import fasttext
+import re
+
+def clean_data(input_file, output_file):
+    """
+    Cleans the dataset by removing data pollution issues like noise, labels in text, etc.
+    :param input_file: Path to the original dataset.
+    :param output_file: Path to save the cleaned dataset.
+    """
+    with open(input_file, "r", encoding="utf-8") as infile, open(output_file, "w", encoding="utf-8") as outfile:
+        for line in infile:
+            # Split into label and text
+            label, text = line.split(" ", 1)
+
+            # Remove potential pollution (example: cleaning words like "label_birth_1990")
+            text = re.sub(r'\b(label_birth_\d{4}|label_political_\w+)\b', '', text)
+
+            # Normalize text (example: remove excessive whitespace)
+            text = re.sub(r'\s+', ' ', text).strip()
+
+            # Save cleaned data
+            outfile.write(f"{label} {text}\n")
+
+# Paths to original and cleaned files
+birth_year_cleaned_file = r"C:\Users\Kaanncc\Desktop\birth_year_cleaned.txt"
+political_leaning_cleaned_file = r"C:\Users\Kaanncc\Desktop\political_leaning_cleaned.txt"
+
+# Clean the datasets
+clean_data(r"C:\Users\Kaanncc\Desktop\birth_year_fasttext.txt", birth_year_cleaned_file)
+clean_data(r"C:\Users\Kaanncc\Desktop\political_leaning_fasttext.txt", political_leaning_cleaned_file)
+
+print("Data cleaning completed.")
+
 def get_top_predictive_words(model_path, top_n=20):
     """
     Get the top predictive words for each label.
