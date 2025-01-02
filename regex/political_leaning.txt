@@ -1,0 +1,7 @@
+\bcommunist\b|\bmarxist\b|\btrotskyist\b|\bstalinist\b|\bmaoist\b|\bleninist\b|\bneo-marxist\b
+\bsocial democrat\b|\bdemocratic socialist\b|\beco-socialist\b
+\bgreen\b|\bpopulist\b|\bnationalist\b|\bauthoritarian\b|\bfascist\b|\breactionary\b|\bradical\b
+\bneoconservative\b|\bpaleoconservative\b|\banarchist\b|\banarcho-capitalist\b|\banarcho-communist\b
+\balt-lite\b|\balt-left\b|\bpaleolibertarian\b|\bminarchist\b|\bclassical liberal\b
+\bchristian democrat\b|\bchristian conservative\b|\bcenter-right\b|\bcenter-left\b
+\bradical left\b|\bradical right\b|\bleft wing\b|\bleft-wing\b|\bright wing\b|\bright-wing\b

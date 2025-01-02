@@ -1,0 +1,4 @@
+\(?\s*\d+[MmFf]\s*\)?
+\(?\s*[MmFf]\d+\s*\)?
+[Ii]( \\'m| am)(?:\s+(?:almost|only|just|also|about to turn|now|a))?\s+\d+(?:\s+(?:year old|now))?
+\(\s*\d+(?:s| now)?\s*\)

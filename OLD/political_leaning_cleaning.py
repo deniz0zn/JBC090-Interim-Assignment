@@ -1,6 +1,6 @@
 import pandas as pd
 
-df_political_leaning_tokenized = pd.read_parquet('datasets/political_leaning_tokenized.parquet')
+df_political_leaning_tokenized = pd.read_parquet('../datasets/political_leaning_tokenized.parquet')
 df_political_leaning_tokenized_string = df_political_leaning_tokenized.copy()
 
 df_political_leaning_tokenized_string['post'] = df_political_leaning_tokenized_string['post'].str.join(' ')

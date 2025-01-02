@@ -1,6 +1,6 @@
 import pandas as pd
 
-df_birth_year_tokenized = pd.read_parquet('birth_year_tokenized.parquet')
+df_birth_year_tokenized = pd.read_parquet('../datasets/birth_year_tokenized.parquet')
 df_birth_year_tokenized_string = df_birth_year_tokenized.copy()
 df_birth_year_tokenized_string['post'] = df_birth_year_tokenized_string['post'].str.join(' ')
 
