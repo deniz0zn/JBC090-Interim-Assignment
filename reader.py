@@ -18,8 +18,8 @@ class DataLoader:
     Class to handle data loading and provide brief information about the dataset.
     """
     def __init__(self, file_path):
-        self.data = pd.read_csv(file_path)
-        self.rename_columns()
+        self.file_path = file_path
+        self.data = pd.read_csv(self.file_path)
         self.info()
 
     def info(self):
@@ -32,9 +32,9 @@ class DataLoader:
 
     def rename_columns(self):
         if "birth_year" in self.data.columns:
-            self.data = self.data.rename(columns={"auhtor_ID" : "author_id", "birth_year" : "target"})
+            self.data = self.data.rename(columns={"auhtor_ID" : "author_id", "birth_year" : "label"})
         elif "political_leaning" in self.data.columns:
-            self.data = self.data.rename(columns={"auhtor_ID": "author_id", "political_leaning" : "target"})
+            self.data = self.data.rename(columns={"auhtor_ID": "author_id", "political_leaning" : "label"})
 
 
     def check_imbalance(self):
@@ -51,6 +51,30 @@ class DataLoader:
     def char_count(self):
         self.data['char_count'] = self.data["post"].apply(lambda x: len(str(x)))
         return self.data['char_count'].mean()
+
+
+    def gen(self, year: int) -> str:
+        if 1946 <= year <= 1964:
+            return 'Baby boomers'
+        elif 1965 <= year <= 1980:
+            return 'Generation X'
+        elif 1981 <= year <= 1996:
+            return 'Millennials'
+        else:  # 1997 <= year <= 2012
+            return 'Generation Z'
+
+    def apply_gen(self) -> pd.DataFrame:
+        self.data["generation"] = self.data["label"].apply(self.gen)
+
+
+    def dataframe(self) -> pd.DataFrame:
+        self.rename_columns()
+        if "birth_year" in self.file_path:
+            self.apply_gen()
+
+        return self.data
+
+
 
 
 
@@ -91,22 +115,16 @@ class DataCleaning:
         return [self.lemmatizer.lemmatize(word, self.get_wordnet_pos(tag)) for word, tag in pos_tags]
 
     @staticmethod
-    def get_wordnet_pos(treebank_tag):
+    def _pos_tagger(t: str) -> str:
         """
-        Converts TreeBank POS tags to WordNet POS tags.
+        Convert wordnet POS to lemmatization POS.
+        :param t: POS tag to convert
+        :return: POS tag for lemmatization.
         """
-        if treebank_tag.startswith('J'):
-            return wordnet.ADJ
-        elif treebank_tag.startswith('V'):
-            return wordnet.VERB
-        elif treebank_tag.startswith('N'):
-            return wordnet.NOUN
-        elif treebank_tag.startswith('R'):
-            return wordnet.ADV
-        else:
-            return wordnet.NOUN
+        return {'J': wordnet.ADJ, 'V': wordnet.VERB, 'R': wordnet.ADV}.get(t[0], wordnet.NOUN)
 
-    def process(self, df, text_column="post"):
+
+def process(self, df, text_column="post"):
 
         df_copy = df.copy()
         df_copy[text_column] = df_copy[text_column].progress_apply(lambda x: self.clean_text(x))
@@ -116,17 +134,12 @@ class DataCleaning:
 
 class Reader:
     def __init__(self, path: str, split: bool):
-        self.df = DataLoader(path)
+        self.df = DataLoader(path).dataframe()
         self.cleaner = DataCleaning()
         self.split = split
         self.train = None
         self.test = None
 
-    def data_split(self, test_size=test_size, random_state=__RANDOM_STATE__):
-        self.train, self.test = train_test_split(
-            self.data, test_size=test_size, random_state=random_state, stratify=self.data[self.target_column]
-        )
-        return self.train, self.test
 
     def run(self):
         self.df = self.cleaner.process(self.df)
