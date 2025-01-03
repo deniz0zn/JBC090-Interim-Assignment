@@ -2,17 +2,21 @@ from sklearn.metrics import classification_report, roc_auc_score, f1_score
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 import pandas as pd
+from tqdm import tqdm
+import shap
 
-class Evaluation:
+class Evaluator:
     """
     Handles model evaluation, including metrics calculation, ROC curve plotting,
-    and feature importance reporting for interpretability.
+    feature importance reporting for interpretability, and prediction explanation.
     """
 
-    def __init__(self):
+    def __init__(self,model,vectorizer):
         self.results = {}
+        self.model = model
+        self.vectorizer = vectorizer
 
-    def evaluate(self, model, X_test, y_test, model_name="Model"):
+    def evaluate(self,model, X_test, y_test, model_name="Model"):
         """
         Evaluate the model on the test set.
 
@@ -88,3 +92,22 @@ class Evaluation:
         print("\nTop Negative Features:")
         for coef, feature in top_negative:
             print(f"{feature}: {coef:.4f}")
+
+    def predict_and_update(self, dataset, text_column="post", key_column="author_id"):
+        X = self.vectorizer.transform(tqdm(dataset[text_column], desc="Vectorizing Dataset"))
+        predictions = self.model.predict(X)
+        predictions_df = pd.DataFrame({
+            key_column: dataset[key_column],
+            "predicted_label": predictions
+        })
+        updated_dataset = pd.merge(dataset, predictions_df, on=key_column, how="left")
+        return updated_dataset
+
+    def explain_predictions(self, model, vectorizer, dataset, text_column="post"):
+        """
+        Explains the model's predictions using SHAP.
+        """
+        X = vectorizer.transform(tqdm(dataset[text_column], desc="Preparing SHAP Data"))
+        explainer = shap.KernelExplainer(model.predict_proba, X)
+        shap_values = explainer.shap_values(X, nsamples=100)
+        shap.summary_plot(shap_values, X, feature_names=vectorizer.get_feature_names_out())
