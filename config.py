@@ -7,3 +7,5 @@ param_grid = {
             }
 CV = 5
 test_size = 0.3
+svm_C_values = [1, 10, 100]
+svm_gamma_values = ['scale', 'auto', 0.1, 0.01]
