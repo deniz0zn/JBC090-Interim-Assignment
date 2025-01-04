@@ -1,13 +1,62 @@
 from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from joblib import dump, load
-from config import param_grid, __DEBUG__, CV
+from config import param_grid, __DEBUG__, CV, svm_C_values, svm_gamma_values, __RANDOM_STATE__
 import os
 
-def fine_tune(model,model_path, vectorizer , vectorizer_path,
-              X_train, y_train,param_grid = param_grid,
-              cv=CV , DEBUG = __DEBUG__):
+
+def fine_tune_svm(model_path, X_train, y_train, X_test, y_test, DEBUG=__DEBUG__):
     """
-    Fine-tune a model with grid search and save the fine-tuned model and vectorizer.
+    Fine-tune SVM model using C values and gamma values.
+    Parameters:
+        model_path: path to saved fine-tuned model
+        X_train: training features
+        y_train: training labels
+        X_test: test features
+        y_test: test labels
+        DEBUG: debug flag
+    """
+    if DEBUG and os.path.exists(model_path):
+        print(f"Loading fine-tuned model from {model_path}...")
+        best_model = load(model_path)
+        return best_model
+
+    best_score = 0
+    best_model = None
+
+    for C in svm_C_values:
+        for gamma in svm_gamma_values:
+            print(f"Trying C={C}, gamma={gamma}")
+            svm = SVC(kernel='rbf',
+                      C=C,
+                      gamma=gamma,
+                      random_state=__RANDOM_STATE__)
+            svm.fit(X_train, y_train)
+            score = svm.score(X_test, y_test)
+            print(f"Score for C={C}, gamma={gamma}: {score}")
+
+            if score > best_score:
+                best_model = svm
+                best_score = score
+
+    return best_model
+
+
+def fine_tune_log_reg(model_path, vectorizer, vectorizer_path, X_train, y_train, param_grid=param_grid,
+                      cv=CV, DEBUG=__DEBUG__):
+    """
+    Fine-tune logistic regression model using GridSearchCV.
+    Save fine-tuned model and vectorizer.
+    Parameters:
+        model_path: path to saved fine-tuned model
+        vectorizer: vectorizer
+        vectorizer_path: path to saved vectorizer
+        X_train: training features
+        y_train: training labels
+        param_grid: parameter grid
+        cv: cross validation split
+        DEBUG: debug flag
     """
     if DEBUG and os.path.exists(model_path) and os.path.exists(vectorizer_path):
         print(f"Loading fine-tuned model from {model_path} and vectorizer from {vectorizer_path}...")
@@ -16,7 +65,7 @@ def fine_tune(model,model_path, vectorizer , vectorizer_path,
         return best_model, vectorizer, None
 
     grid_search = GridSearchCV(
-        estimator=model,
+        estimator=LogisticRegression(max_iter=500),
         param_grid=param_grid,
         scoring='accuracy',
         cv=cv,
@@ -24,42 +73,12 @@ def fine_tune(model,model_path, vectorizer , vectorizer_path,
         verbose=10
     )
     grid_search.fit(X_train, y_train)
-    best_model = grid_search.best_estimator_
     print("Best Parameters:", grid_search.best_params_)
 
-    dump(best_model, model_path)
+    dump(grid_search.best_estimator_, model_path)
     dump(vectorizer, vectorizer_path)
 
     print(f"Fine-tuned model saved to {model_path}.")
     print(f"Vectorizer saved to {vectorizer_path}.")
 
-    return best_model, grid_search.best_params_
-
-
-# def fine_tune_transformer(trainer, train_dataset, eval_dataset, output_dir="./results", save_path="transformer_model.pt", DEBUG = __DEBUG__):
-#     """
-#     Fine-tunes a transformer-based model using the HuggingFace Trainer and saves the fine-tuned model.
-#     """
-#     if DEBUG:
-#         print(f"Loading fine-tuned transformer model from {save_path}...")
-#         trainer.model = torch.load(save_path)
-#         return trainer
-#
-#     print("Fine-tuning transformer model...")
-#     training_args = TrainingArguments(
-#         output_dir=output_dir,
-#         evaluation_strategy="epoch",
-#         save_strategy="epoch",
-#         learning_rate=5e-5,
-#         per_device_train_batch_size=16,
-#         num_train_epochs=3,
-#         weight_decay=0.01,
-#     )
-#
-#     trainer.args = training_args
-#     trainer.train()
-#
-#     # Save the model
-#     torch.save(trainer.model, save_path)
-#     print(f"Fine-tuned transformer model saved to {save_path}.")
-#     return trainer
+    return grid_search.best_estimator_, vectorizer, None
