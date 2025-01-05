@@ -2,6 +2,13 @@
 
 ## JBC090 Interim Assignment
 
+## Group 3
+- Kaan Mutlu Çelik (1785559)
+- Juliette Hattingh-Haasbroek (1779192)
+- Deniz Özen (1734970)
+- Berke Söker (1821458)
+
+
 ### Research Question
 ow can stylometry and NLP techniques be combined to develop robust, interpretable, and fair models for Reddit author profiling, specifically to predict a user’s generation based on their political views, while evaluating the explanatory power of political views in generation prediction?
 
@@ -61,9 +68,3 @@ A section dedicated to experimental manipulation. What elements can be changed t
 
 Ideally: a section on how to add to the research code. Which components are modular and can be swapped out? How does one do that?
 
-
-## Group 3
-- Kaan Mutlu Çelik (1785559)
-- Juliette Hattingh-Haasbroek (1779192)
-- Deniz Özen (1734970)
-- Berke Söker (1821458)
