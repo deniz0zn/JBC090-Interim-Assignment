@@ -18,9 +18,11 @@ def fine_tune_svm(model_path, X_train, y_train, X_test, y_test, DEBUG=__DEBUG__)
         DEBUG: debug flag
     """
     if DEBUG and os.path.exists(model_path):
+
         print(f"Loading fine-tuned model from {model_path}...")
         best_model = load(model_path)
         return best_model
+
 
     best_score = 0
     best_model = None
@@ -43,8 +45,9 @@ def fine_tune_svm(model_path, X_train, y_train, X_test, y_test, DEBUG=__DEBUG__)
     return best_model
 
 
+
 def fine_tune_log_reg(model_path, vectorizer, vectorizer_path, X_train, y_train, param_grid=param_grid,
-                      cv=CV, DEBUG=__DEBUG__):
+                      cv=CV, DEBUG=__DEBUG__, return_params = True):
     """
     Fine-tune logistic regression model using GridSearchCV.
     Save fine-tuned model and vectorizer.
@@ -62,7 +65,9 @@ def fine_tune_log_reg(model_path, vectorizer, vectorizer_path, X_train, y_train,
         print(f"Loading fine-tuned model from {model_path} and vectorizer from {vectorizer_path}...")
         best_model = load(model_path)
         vectorizer = load(vectorizer_path)
-        return best_model, vectorizer, None
+
+        return best_model.best_params_ if return_params else best_model, vectorizer, best_model.best_params_
+
 
     grid_search = GridSearchCV(
         estimator=LogisticRegression(max_iter=500),
@@ -81,4 +86,5 @@ def fine_tune_log_reg(model_path, vectorizer, vectorizer_path, X_train, y_train,
     print(f"Fine-tuned model saved to {model_path}.")
     print(f"Vectorizer saved to {vectorizer_path}.")
 
-    return grid_search.best_estimator_, vectorizer, None
+    return grid_search.best_params_ if return_params else grid_search.best_estimator_, vectorizer, grid_search.best_params_
+
