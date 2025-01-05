@@ -1,6 +1,7 @@
-from sklearn.metrics import classification_report, roc_auc_score, f1_score
+from sklearn.metrics import classification_report, roc_auc_score, f1_score, accuracy_score
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
+from sklearn.pipeline import Pipeline
 import pandas as pd
 from tqdm import tqdm
 import shap
@@ -11,23 +12,31 @@ class Evaluator:
     feature importance reporting for interpretability, and prediction explanation.
     """
 
-    def __init__(self,model,vectorizer):
+    def __init__(self, pipeline):
         self.results = {}
-        self.model = model
-        self.vectorizer = vectorizer
+        self.pipeline = pipeline
+        self.vectorizer = self._extract_component("vectorizer")
+        self.classifier = self._extract_component("classifier")
 
-    def evaluate(self,model, X_test, y_test, model_name="Model"):
+    def _extract_component(self, component_name):
         """
-        Evaluate the model on the test set.
+        Extracts a component from the pipeline if it exists.
+        """
+        if isinstance(self.pipeline, Pipeline) and component_name in self.pipeline.named_steps:
+            return self.pipeline.named_steps[component_name]
+        return None
+
+    def evaluate(self, X_test, y_test, model_name="Model"):
+        """
+        Evaluate the pipeline on the test set.
 
         Parameters:
-            model: Trained model.
             X_test: Features of the test set.
             y_test: True labels of the test set.
             model_name: Name of the model for result tracking.
         """
-        y_pred = model.predict(X_test)
-        y_proba = model.predict_proba(X_test) if hasattr(model, "predict_proba") else None
+        y_pred = self.pipeline.predict(X_test)
+        y_proba = self.pipeline.predict_proba(X_test) if hasattr(self.pipeline, "predict_proba") else None
 
         report = classification_report(y_test, y_pred, output_dict=True)
         f1 = f1_score(y_test, y_pred, average='weighted')
@@ -67,21 +76,19 @@ class Evaluator:
         plt.legend(loc='lower right')
         plt.show()
 
-    def top_words(self, model, vectorizer, top_n=5):
+    def top_words(self, top_n=5):
         """
         Display the top words/features for interpretability.
 
         Parameters:
-            model: Trained model.
-            vectorizer: Fitted vectorizer for feature extraction.
             top_n: Number of top features to display.
         """
-        if not hasattr(model, "coef_"):
-            print("Feature importance is unavailable for this model.")
+        if not hasattr(self.classifier, "coef_") or self.vectorizer is None:
+            print("Feature importance is unavailable for this pipeline.")
             return
 
-        feature_names = vectorizer.get_feature_names_out()
-        coefs = model.coef_[0]
+        feature_names = self.vectorizer.get_feature_names_out()
+        coefs = self.classifier.coef_[0]
         top_positive = sorted(zip(coefs, feature_names), reverse=True)[:top_n]
         top_negative = sorted(zip(coefs, feature_names))[:top_n]
 
@@ -94,8 +101,19 @@ class Evaluator:
             print(f"{feature}: {coef:.4f}")
 
     def predict_and_update(self, dataset, text_column="post", key_column="author_id"):
+        """
+        Predicts labels for a given dataset and updates it with predictions.
+
+        Parameters:
+            dataset: Input dataset for prediction.
+            text_column: Column containing the text data.
+            key_column: Unique identifier column for the dataset.
+
+        Returns:
+            Updated dataset with predictions.
+        """
         X = self.vectorizer.transform(tqdm(dataset[text_column], desc="Vectorizing Dataset"))
-        predictions = self.model.predict(X)
+        predictions = self.pipeline.predict(X)
         predictions_df = pd.DataFrame({
             key_column: dataset[key_column],
             "predicted_label": predictions
@@ -103,11 +121,15 @@ class Evaluator:
         updated_dataset = pd.merge(dataset, predictions_df, on=key_column, how="left")
         return updated_dataset
 
-    def explain_predictions(self, model, vectorizer, dataset, text_column="post"):
+    def explain_predictions(self, dataset, text_column="post"):
         """
         Explains the model's predictions using SHAP.
+
+        Parameters:
+            dataset: Input dataset for explanation.
+            text_column: Column containing the text data.
         """
-        X = vectorizer.transform(tqdm(dataset[text_column], desc="Preparing SHAP Data"))
-        explainer = shap.KernelExplainer(model.predict_proba, X)
+        X = self.vectorizer.transform(tqdm(dataset[text_column], desc="Preparing SHAP Data"))
+        explainer = shap.KernelExplainer(self.pipeline.predict_proba, X)
         shap_values = explainer.shap_values(X, nsamples=100)
-        shap.summary_plot(shap_values, X, feature_names=vectorizer.get_feature_names_out())
+        shap.summary_plot(shap_values, X, feature_names=self.vectorizer.get_feature_names_out())
