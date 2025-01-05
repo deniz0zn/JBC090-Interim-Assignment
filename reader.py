@@ -10,25 +10,18 @@ from tqdm import tqdm
 import nltk
 from config import __RANDOM_STATE__,test_size
 
+
 nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger', 'stopwords', 'omw-1.4'])
 
 
-class DataLoader:
+class Dataset:
     """
     Class to handle data loading and provide brief information about the dataset.
     """
     def __init__(self, file_path):
         self.file_path = file_path
         self.data = pd.read_csv(self.file_path)
-        self.info()
 
-    def info(self):
-        print (f"The dataset contains {len(self.data)} rows\n"
-                f"The Columns of the dataset: {self.data.columns}\n"
-                f"{self.check_imbalance()}\n"
-                f"Average character count: {self.char_count()}"
-                f"Average word count: {self.word_count()}"
-                )
 
     def rename_columns(self):
         if "birth_year" in self.data.columns:
@@ -74,7 +67,14 @@ class DataLoader:
 
         return self.data
 
-
+    def __str__(self):
+        self.data = self.dataframe()
+        return(f"The dataset contains {len(self.data)} rows\n"
+                f"The Columns of the dataset: {self.data.columns}\n"
+                f"{self.check_imbalance()}\n"
+                f"Average character count: {self.char_count()}"
+                f"Average word count: {self.word_count()}"
+                )
 
 
 
@@ -86,7 +86,7 @@ class DataCleaning:
     def __init__(self):
         self.stop_words = set(stopwords.words('english'))
         self.lemmatizer = WordNetLemmatizer()
-        tqdm.pandas()  # Enable progress bar for pandas
+        tqdm.pandas()
 
     def clean_text(self, text):
 
@@ -124,28 +124,37 @@ class DataCleaning:
         return {'J': wordnet.ADJ, 'V': wordnet.VERB, 'R': wordnet.ADV}.get(t[0], wordnet.NOUN)
 
 
-def process(self, df, text_column="post"):
-
+    def tokenize_data(self, df, text_column="post"):
         df_copy = df.copy()
-        df_copy[text_column] = df_copy[text_column].progress_apply(lambda x: self.clean_text(x))
         df_copy[text_column] = df_copy[text_column].progress_apply(self.tokenize_and_lemmatize)
         return df_copy
 
 
+    def clean_data(self,df, text_column="post"):
+        df_copy = df.copy()
+        df_copy[text_column] = df_copy[text_column].progress_apply(lambda x: self.clean_text(x))
+        return df_copy
+
 class Reader:
-    def __init__(self, path: str, split: bool):
-        self.df = DataLoader(path).dataframe()
+    def __init__(self, path: str, tokenize: bool):
+        self.dataloader =Dataset(path)
+        self.df = self.dataloader.dataframe()
         self.cleaner = DataCleaning()
-        self.split = split
-        self.train = None
-        self.test = None
+        self.tokenize = tokenize
+
+    def dataset(self, tokenize: bool):
+        print(str(self.dataloader))
+        clean_data = self.cleaner.clean_data(self.df)
+
+        return self.cleaner.tokenize_data(clean_data) if tokenize else clean_data
+
+    def split_data(self, test_size: float, random_state: int):
+        processed_df = self.dataset(self.tokenize)
+        X = processed_df["post"]
+        y = processed_df["label"]
+
+        return train_test_split(X,y, test_size= test_size, random_state=random_state)
 
 
-    def run(self):
-        self.df = self.cleaner.process(self.df)
 
-        if self.split:
-            return self.data_split(test_size=self.test_size)
-
-        return self.df
 
