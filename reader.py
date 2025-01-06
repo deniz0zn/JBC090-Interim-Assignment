@@ -9,9 +9,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import nltk
 from config import __RANDOM_STATE__,test_size
-
-
-nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger', 'stopwords', 'omw-1.4'])
+# nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger', 'stopwords', 'omw-1.4'])
 
 
 class Dataset:
@@ -20,31 +18,14 @@ class Dataset:
     """
     def __init__(self, file_path):
         self.file_path = file_path
-        self.data = pd.read_csv(self.file_path)
+        self.df = pd.read_csv(self.file_path)
+        self.target = "birth_year" if "birth_year" in self.df.columns else "political_leaning"
 
-
-    def rename_columns(self):
-        if "birth_year" in self.data.columns:
-            self.data = self.data.rename(columns={"auhtor_ID" : "author_id", "birth_year" : "label"})
-        elif "political_leaning" in self.data.columns:
-            self.data = self.data.rename(columns={"auhtor_ID": "author_id", "political_leaning" : "label"})
-
-
-    def check_imbalance(self):
-        class_distribution = self.data["target"].value_counts(normalize=True) * 100
-        print("\nClass Distribution (%):")
-        for label, percentage in class_distribution.items():
-            print(f"{label}: {percentage:.2f}%")
-        print(f"\nClass Distribution (Counts): \n{self.data["target"].value_counts()}")
-
-    def word_count(self):
-        self.data['word_count'] = self.data["post"].apply(lambda x: len(str(x).split()))
-        return self.data['word_count'].mean()
-
-    def char_count(self):
-        self.data['char_count'] = self.data["post"].apply(lambda x: len(str(x)))
-        return self.data['char_count'].mean()
-
+    # def rename_columns(self):
+    #     if "birth_year" in self.data.columns:
+    #         self.data = self.data.rename(columns={"auhtor_ID" : "author_id", "birth_year" : "label"})
+    #     elif "political_leaning" in self.data.columns:
+    #         self.data = self.data.rename(columns={"auhtor_ID": "author_id", "political_leaning" : "label"})
 
     def gen(self, year: int) -> str:
         if 1946 <= year <= 1964:
@@ -56,63 +37,44 @@ class Dataset:
         else:  # 1997 <= year <= 2012
             return 'Generation Z'
 
-    def apply_gen(self) -> pd.DataFrame:
-        self.data["generation"] = self.data["label"].apply(self.gen)
+    def apply_gen(self):
+        if self.target == "birth_year":
+            self.df["generation"] = self.df[self.target].apply(self.gen)
+            self.target = "generation"
 
+        return self.df
 
-    def dataframe(self) -> pd.DataFrame:
-        self.rename_columns()
-        if "birth_year" in self.file_path:
-            self.apply_gen()
+    def check_imbalance(self):
+        class_distribution = self.df[self.target].value_counts(normalize=True) * 100
+        print("\nClass Distribution (%):")
+        for label, percentage in class_distribution.items():
+            print(f"{label}: {percentage:.2f}%")
+        print(f"\nClass Distribution (Counts):\n{self.df[self.target].value_counts()}\n")
 
-        return self.data
+    def word_count(self):
+        self.df['word_count'] = self.df["post"].apply(lambda x: len(str(x).split()))
+        return self.df['word_count'].mean()
+
+    def char_count(self):
+        self.df['char_count'] = self.df["post"].apply(lambda x: len(str(x)))
+        return self.df['char_count'].mean()
 
     def __str__(self):
-        self.data = self.dataframe()
-        return(f"The dataset contains {len(self.data)} rows\n"
-                f"The Columns of the dataset: {self.data.columns}\n"
+        self.apply_gen()
+        return(f"The dataset contains {len(self.df)} rows\n"
+                f"The columns of the dataset: {self.df.columns}\n"
                 f"{self.check_imbalance()}\n"
-                f"Average character count: {self.char_count()}"
-                f"Average word count: {self.word_count()}"
+                f"Average character count: {self.char_count():.3f}\n"
+                f"Average word count: {self.word_count():.3f}"
                 )
-
-
 
 
 class DataCleaning:
     """
-    Class to handle data cleaning for Phase 0.
+    Tokenize and clean a dataset.
     """
-    def __init__(self):
-        self.stop_words = set(stopwords.words('english'))
+    def __init__(self) -> None:
         self.lemmatizer = WordNetLemmatizer()
-        tqdm.pandas()
-
-    def clean_text(self, text):
-
-        with open("regex/birth_year.txt", 'r') as file:
-            patterns = [line.strip() for line in file if line.strip()]
-        for pattern in patterns:
-            text = re.sub(pattern, "<AGE_TERM>", text)
-
-        with open("regex/political_leaning.txt", 'r') as file:
-            patterns = [line.strip() for line in file if line.strip()]
-        for pattern in patterns:
-            text = re.sub(pattern, "<POLITICAL_TERM>", text)
-
-        # Remove URLs
-        text = re.sub(r"http[s]?://\S+|www\.\S+", "<URL>", text)
-        # Remove punctuation
-        text = re.sub(r"[^\w\s]", "", text)
-        # Normalize text
-        text = re.sub(r'\s+', ' ', text).strip().lower()
-        return text
-
-    def tokenize_and_lemmatize(self, text):
-        tokens = word_tokenize(text)
-        tokens = [word for word in tokens if word not in self.stop_words]
-        pos_tags = pos_tag(tokens)
-        return [self.lemmatizer.lemmatize(word, self.get_wordnet_pos(tag)) for word, tag in pos_tags]
 
     @staticmethod
     def _pos_tagger(t: str) -> str:
@@ -123,38 +85,66 @@ class DataCleaning:
         """
         return {'J': wordnet.ADJ, 'V': wordnet.VERB, 'R': wordnet.ADV}.get(t[0], wordnet.NOUN)
 
+    def tokenize(self, text: str) -> list[str]:
+        """
+        Tokenize the sentence.
+        :param text: text string to tokenize
+        :return: list of tokens.
+        """
+        pos_text = pos_tag(word_tokenize(text))  # get POS for every word
+        pos_tokens = [self.lemmatizer.lemmatize(word, self._pos_tagger(tag)).lower() for (word, tag) in pos_text]
+        return pos_tokens
 
-    def tokenize_data(self, df, text_column="post"):
-        df_copy = df.copy()
-        df_copy[text_column] = df_copy[text_column].progress_apply(self.tokenize_and_lemmatize)
-        return df_copy
+    def apply_tokenizer(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply tokenization to dataframe.
+        :return: tokenized dataframes.
+        """
+        tqdm.pandas()  # show progress for each dataset
+        df['post'] = df['post'].progress_apply(self.tokenize)
+        df['post'] = df['post'].str.join(' ')
+        return df
 
+    def clean(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Remove data pollution from dataframes e.g. ages and political terms.
+        :return: cleaned dataframes.
+        """
+        if "birth_year" in df.columns:
+            with open("regex/birth_year.txt", 'r') as file:
+                patterns = [line.strip() for line in file if line.strip()]
+            for pattern in patterns:
+                df['post'] = df['post'].str.replace(pattern, '', regex=True)
+        else:  # "political_leaning" in df.columns
+            with open("regex/political_leaning.txt", 'r') as file:
+                patterns = [line.strip() for line in file if line.strip()]
+            for pattern in patterns:
+                df['post'] = df['post'].str.replace(pattern, '<POLITICAL_TERM>', regex=True)
 
-    def clean_data(self,df, text_column="post"):
-        df_copy = df.copy()
-        df_copy[text_column] = df_copy[text_column].progress_apply(lambda x: self.clean_text(x))
-        return df_copy
+        return df
+
 
 class Reader:
     def __init__(self, path: str, tokenize: bool):
-        self.dataloader =Dataset(path)
-        self.df = self.dataloader.dataframe()
-        self.cleaner = DataCleaning()
+        self.dataloader = Dataset(path)
+        self.df = self.dataloader.apply_gen()
         self.tokenize = tokenize
+        self.cleaner = DataCleaning()
 
-    def dataset(self, tokenize: bool):
-        print(str(self.dataloader))
-        clean_data = self.cleaner.clean_data(self.df)
+    def dataset(self) -> pd.DataFrame:
+        clean_data = self.cleaner.clean(self.df)
+        return self.cleaner.apply_tokenizer(clean_data) if self.tokenize else clean_data
 
-        return self.cleaner.tokenize_data(clean_data) if tokenize else clean_data
-
-    def split_data(self, test_size: float, random_state: int):
-        processed_df = self.dataset(self.tokenize)
+    def split_data(self, test_size=test_size, random_state=__RANDOM_STATE__):
+        processed_df = self.dataset()
         X = processed_df["post"]
-        y = processed_df["label"]
 
-        return train_test_split(X,y, test_size= test_size, random_state=random_state)
+        if "birth_year" in processed_df.columns:
+            y = processed_df["generation"]
+        else:
+            y = processed_df["political_leaning"]
+
+        return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
 
-
-
+# df_gen = Reader('datasets/birth_year.csv', tokenize=True).dataset()

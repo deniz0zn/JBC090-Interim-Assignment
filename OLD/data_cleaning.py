@@ -84,7 +84,65 @@ class DataCleaning:
         return self.df_birth_y, self.df_pol_lean
 
 
-cleaner = DataCleaning('datasets/birth_year.csv', 'datasets/political_leaning.csv', 'new_datasets')
+## DATA CLEANING CLASS FROM DENIZ
+# class DataCleaning:
+#     """
+#     Class to handle data cleaning for Phase 0.
+#     """
+#     def __init__(self):
+#         self.stop_words = set(stopwords.words('english'))
+#         self.lemmatizer = WordNetLemmatizer()
+#         tqdm.pandas()
+#
+#     def clean_text(self, text):
+#
+#         with open("regex/birth_year.txt", 'r') as file:
+#             patterns = [line.strip() for line in file if line.strip()]
+#         for pattern in patterns:
+#             text = re.sub(pattern, "", text)
+#
+#         with open("regex/political_leaning.txt", 'r') as file:
+#             patterns = [line.strip() for line in file if line.strip()]
+#         for pattern in patterns:
+#             text = re.sub(pattern, "<POLITICAL_TERM>", text)
+#
+#         # Remove URLs
+#         text = re.sub(r"http[s]?://\S+|www\.\S+", "<URL>", text)
+#         # Remove punctuation
+#         text = re.sub(r"[^\w\s]", "", text)
+#         # Normalize text
+#         text = re.sub(r'\s+', ' ', text).strip().lower()
+#         return text
+#
+#     def tokenize_and_lemmatize(self, text):
+#         tokens = word_tokenize(text)
+#         tokens = [word for word in tokens if word not in self.stop_words]
+#         pos_tags = pos_tag(tokens)
+#         return [self.lemmatizer.lemmatize(word, self._pos_tagger(tag)) for word, tag in pos_tags]
+#
+#     @staticmethod
+#     def _pos_tagger(t: str) -> str:
+#         """
+#         Convert wordnet POS to lemmatization POS.
+#         :param t: POS tag to convert
+#         :return: POS tag for lemmatization.
+#         """
+#         return {'J': wordnet.ADJ, 'V': wordnet.VERB, 'R': wordnet.ADV}.get(t[0], wordnet.NOUN)
+#
+#
+#     def tokenize_data(self, df, text_column="post"):
+#         df_copy = df.copy()
+#         df_copy[text_column] = df_copy[text_column].progress_apply(self.tokenize_and_lemmatize)
+#         return df_copy
+#
+#
+#     def clean_data(self,df, text_column="post"):
+#         df_copy = df.copy()
+#         df_copy[text_column] = df_copy[text_column].progress_apply(lambda x: self.clean_text(x))
+#         return df_copy
+
+
+cleaner = DataCleaning('../datasets/birth_year.csv', 'datasets/political_leaning.csv', 'new_datasets')
 print("Tokenizing the dataframes:")
 df_birth_year_tokenized, df_political_leaning_tokenized = cleaner.apply_tokenizer()
 print("Dataframes tokenized. Cleaning the dataframes...")
