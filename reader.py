@@ -94,6 +94,7 @@ class DataCleaning:
         Apply tokenization to dataframe.
         :return: tokenized dataframes.
         """
+        print("\nTokenizing dataset.")
         tqdm.pandas()  # show progress for each dataset
         df['post'] = df['post'].progress_apply(self.tokenize)
         df['post'] = df['post'].str.join(' ')
@@ -121,6 +122,7 @@ class DataCleaning:
 class Reader:
     def __init__(self, path: str, tokenize: bool):
         self.dataloader = Dataset(path)
+        self.target = self.dataloader.target
         self.df = self.dataloader.apply_gen()
         self.tokenize = tokenize
         self.cleaner = DataCleaning()

@@ -2,27 +2,23 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from joblib import dump, load
-from config import param_grid, __DEBUG__, CV, svm_C_values, svm_gamma_values, __RANDOM_STATE__
+from config import param_grid, __DEBUG__, svm_C_values, svm_gamma_values, __RANDOM_STATE__
 import os
+from config_fine_tune import pol_logistic_parameters, gen_logistic_parameters, svm_parameters
 
 
-def fine_tune_svm(model_path, X_train, y_train, X_test, y_test, DEBUG=__DEBUG__):
+def fine_tune_svm(X_train, y_train, X_test, y_test, DEBUG=__DEBUG__):
     """
     Fine-tune SVM model using C values and gamma values.
     Parameters:
-        model_path: path to saved fine-tuned model
         X_train: training features
         y_train: training labels
         X_test: test features
         y_test: test labels
         DEBUG: debug flag
     """
-    if DEBUG and os.path.exists(model_path):
-
-        print(f"Loading fine-tuned model from {model_path}...")
-        best_model = load(model_path)
-        return best_model
-
+    if DEBUG:
+        return svm_parameters
 
     best_score = 0
     best_model = None
@@ -53,13 +49,9 @@ def fine_tune_log_reg(X_train, y_train, param_grid=param_grid, DEBUG=__DEBUG__, 
     Fine-tune logistic regression model using GridSearchCV.
     Save fine-tuned model and vectorizer.
     Parameters:
-        model_path: path to saved fine-tuned model
-        vectorizer: vectorizer
-        vectorizer_path: path to saved vectorizer
         X_train: training features
         y_train: training labels
         param_grid: parameter grid
-        cv: cross validation split
         DEBUG: debug flag
         mode: target of dataset
     """
@@ -73,13 +65,5 @@ def fine_tune_log_reg(X_train, y_train, param_grid=param_grid, DEBUG=__DEBUG__, 
                                 verbose=10
                                 )
     grid_search.fit(X_train, y_train)
-    print("Best Parameters:", grid_search.best_params_)
-
-    dump(grid_search.best_estimator_, model_path)
-    dump(vectorizer, vectorizer_path)
-
-    print(f"Fine-tuned model saved to {model_path}.")
-    print(f"Vectorizer saved to {vectorizer_path}.")
-
-    return grid_search.best_params_ if return_params else grid_search.best_estimator_, vectorizer, grid_search.best_params_
+    return grid_search.best_params_
 

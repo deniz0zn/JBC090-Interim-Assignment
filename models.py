@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from gensim.models.fasttext import FastText
-from config import __RANDOM_STATE__, test_size, __DEBUG__
+from config import __RANDOM_STATE__, test_size, __DEBUG__, param_grid
 from reader import Reader
 from config_fine_tune import *
 from fine_tune import *
@@ -62,6 +62,7 @@ class DataPreprocessor:
         self.random_state = random_state
         self.mode = mode
         self.vectorizer = vectorizer
+        self.X_train, self.X_test, self.y_train, self.y_test = self.reader.split_data(self.test_size, self.random_state)
 
     def mapping(self, y_train, y_test):
         """
@@ -135,7 +136,7 @@ class LogisticModel:
         self.model.fit(X_test_vec, y_test)
         print(f"Default model fitted. Metrics: {Metrics(X_test_vec, y_test, self.model)}")
 
-        return self.model, self.vectorizer
+        return self.model
 
 
 class FastTextVectorizer:

@@ -74,8 +74,18 @@ class Experiment_setup:
 
 
     def run_pipeline(self, reader: Reader, mode: str, model:str, top_n = 5, fine_tune= False):
-        pipeline = create_pipeline(model)
-        X_train, X_test, y_train, y_test = self.preprocess_data(reader, mode, pipeline)
+        """
+
+        :param reader:
+        :param mode: target
+        :param model: logistic regression or SVM
+        :param top_n:
+        :param fine_tune:
+        :return:
+        """
+        # pipeline = create_pipeline(model)
+        # X_train, X_test, y_train, y_test = self.preprocess_data(reader, mode, pipeline)
+        X_train, X_test, y_train, y_test = DataPreprocessor.preprocess()  # comment out and use from datapreproc.
 
         if fine_tune:
             print(f"Fine-tuning {model} model for {mode}...")
@@ -227,11 +237,11 @@ class Experiments:
 
 
 
-setup = Experiment_setup(BY_PATH, PL_PATH)
-experiments = Experiments(setup)
-experiments.phase_1()
-experiments.phase_2()
-experiments.phase_3()
+# setup = Experiment_setup(BY_PATH, PL_PATH)
+# experiments = Experiments(setup)
+# experiments.phase_1()
+# experiments.phase_2()
+# experiments.phase_3()
 
 
 
