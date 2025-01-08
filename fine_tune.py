@@ -30,10 +30,12 @@ def fine_tune_svm(model_path, X_train, y_train, X_test, y_test, DEBUG=__DEBUG__)
     for C in svm_C_values:
         for gamma in svm_gamma_values:
             print(f"Trying C={C}, gamma={gamma}")
-            svm = SVC(kernel='rbf',
+            svm = SVC(kernel="rbf",
+                      class_weight="balanced",
                       C=C,
                       gamma=gamma,
-                      random_state=__RANDOM_STATE__)
+                      random_state=__RANDOM_STATE__
+                      )
             svm.fit(X_train, y_train)
             score = svm.score(X_test, y_test)
             print(f"Score for C={C}, gamma={gamma}: {score}")
@@ -42,12 +44,11 @@ def fine_tune_svm(model_path, X_train, y_train, X_test, y_test, DEBUG=__DEBUG__)
                 best_model = svm
                 best_score = score
 
-    return best_model
+
+    return best_model.get_params()
 
 
-
-def fine_tune_log_reg(model_path, vectorizer, vectorizer_path, X_train, y_train, param_grid=param_grid,
-                      cv=CV, DEBUG=__DEBUG__, return_params = True):
+def fine_tune_log_reg(X_train, y_train, param_grid=param_grid, DEBUG=__DEBUG__, mode=None):
     """
     Fine-tune logistic regression model using GridSearchCV.
     Save fine-tuned model and vectorizer.
@@ -60,23 +61,17 @@ def fine_tune_log_reg(model_path, vectorizer, vectorizer_path, X_train, y_train,
         param_grid: parameter grid
         cv: cross validation split
         DEBUG: debug flag
+        mode: target of dataset
     """
-    if DEBUG and os.path.exists(model_path) and os.path.exists(vectorizer_path):
-        print(f"Loading fine-tuned model from {model_path} and vectorizer from {vectorizer_path}...")
-        best_model = load(model_path)
-        vectorizer = load(vectorizer_path)
+    if DEBUG:
+        return pol_logistic_parameters if mode == "political_leaning" else gen_logistic_parameters
 
-        return best_model.best_params_ if return_params else best_model, vectorizer, best_model.best_params_
-
-
-    grid_search = GridSearchCV(
-        estimator=LogisticRegression(max_iter=500),
-        param_grid=param_grid,
-        scoring='accuracy',
-        cv=cv,
-        n_jobs=-1,
-        verbose=10
-    )
+    grid_search = GridSearchCV(estimator=LogisticRegression(max_iter=500),
+                                param_grid=param_grid,
+                                scoring='accuracy',
+                                n_jobs=-1,
+                                verbose=10
+                                )
     grid_search.fit(X_train, y_train)
     print("Best Parameters:", grid_search.best_params_)
 

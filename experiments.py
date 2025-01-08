@@ -1,38 +1,61 @@
+from imblearn.over_sampling import RandomOverSampler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from models import LogisticModel, FastTextVectorizer, SVMTrainer, DataPreprocessor
+from models import LogisticModel, FastTextVectorizer, SVMModel, DataPreprocessor
 from imblearn.pipeline import Pipeline
-from config import PL_PATH, BY_PATH
+from config import PL_PATH, BY_PATH, __DEBUG__
 from reader import Reader
 from evaluation import Evaluator
 from fine_tune import fine_tune_log_reg, fine_tune_svm
+from models import LogisticModel, FastTextVectorizer, SVMModel
+# from explainable_ai import LimeEvaluator
 
 
-def create_pipeline(model: str): # "logistic" or SVM
+class RunModels:
+    """
+    Run all models for a dataset.
+    """
+    def __init__(self, preprocessor: DataPreprocessor, tfidf: TfidfVectorizer, file_path):
+        self.preprocessor = preprocessor
+        self.tfidf = tfidf
+        self.file_path = file_path
+        self.df = Reader(self.file_path, tokenize=False)
+        # self.X_train_vec, _ = self.preprocessor.vectorize_train()  # for log-reg
+        self.X = FastTextVectorizer(self.df.dataset()['post'].values).transform()  # for SVM
 
-    logistic_pipeline = [
-        ("vectorizer", TfidfVectorizer(max_df=0.95, use_idf=True)),
-        ("resampler", RandomOverSampler()),  # sampler will be changed. This is added as an example
-        ("classifier", LogisticModel())
-    ]
+    def run_default_logistic_regression(self):
+        return LogisticModel(DataPreprocessor(self.df, self.tfidf, self.preprocessor.mode)).fit()
 
-    SVM_pipeline = [
-        ("vectorizer", FastTextVectorizer()),
-        ("resampler", RandomOverSampler()),  # sampler will be changed. This is added as an example
-        ("classifier", SVMTrainer())
-    ]
+    def run_fine_tuned_logistic_regression(self):
+        return LogisticModel(DataPreprocessor(self.df, self.tfidf, self.preprocessor.mode), fine_tuned = True).fit()
 
-    if model == "logistic":
-        return Pipeline(logistic_pipeline)
-    elif model == "SVM":
-        return Pipeline(SVM_pipeline)
-    else:
-        raise KeyError(f"Invalid model: {model}. Please use either 'logistic' or 'SVM'.")
+    def run_default_svm(self):
+        return SVMModel(reader=self.df, X=self.X, target=self.preprocessor.mode).fit()
+
+    def run_fine_tuned_svm(self):
+        return SVMModel(self.df, self.X, self.preprocessor.mode, fine_tuned=True).fit()
+
+    def add_predicted_political_leaning(self, model):  # svm fine tuned used
+        if self.preprocessor.mode == "generation":
+            self.df.dataset()['predicted_political_leaning'] = model.predict(self.X)
+            self.df.dataset()['predicted_political_leaning'] = self.df.dataset()['predicted_political_leaning'].map({0: 'left',1: 'center',2: 'right'})
+        return self.df
+
+
+
+df_gen = Reader('datasets/birth_year.csv', tokenize=False)
+preprocessor_df_gen = DataPreprocessor(df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'generation')
+# lr = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'datasets/birth_year.csv')
+# lr.run_default_logistic_regression()
+# lr.run_fine_tuned_logistic_regression()
+svm = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'datasets/birth_year.csv')
+svm.run_fine_tuned_svm()
+### update: both svm models worked!!
 
 
 class Experiment_setup:
     def __init__(self, by_path: str, pl_path: str):
         self.pl_reader = Reader(pl_path, tokenize=True)
-        self.by_reader =Reader(by_path, tokenize=True)
+        self.by_reader = Reader(by_path, tokenize=True)
         self.vectorizer = None
         self.preprocessed_data ={}
 
@@ -58,12 +81,12 @@ class Experiment_setup:
             print(f"Fine-tuning {model} model for {mode}...")
 
             if model == "logistic":
-                best_params = self.fine_tune_logistic(reader, mode)
+                best_params = self.fine_tuning_logistic(reader, mode)
                 pipeline.named_steps["classifier"].set_params(**best_params)
 
             elif model == "SVM":
                 # Replace the SVM model with the fine-tuned model
-                best_model = self.fine_tune_svm(reader, mode)
+                best_model = self.fine_tuning_svm(reader, mode)
                 pipeline.named_steps["classifier"] = best_model
 
         print(f"Fitting {model} pipeline...")
@@ -73,47 +96,6 @@ class Experiment_setup:
         evaluator = Evaluator(pipeline)
         evaluator.evaluate(X_test, y_test, model_name=f"{model}_{mode}")
         evaluator.top_words(top_n=top_n)
-
-
-
-    def fine_tuning_logistic(self, reader: Reader, mode: str):
-        print(f"Fine-tuning logistic regression for {mode}...")
-
-        X_train, _, y_train, _ = self.preprocessed_data.get(mode)
-
-        best_params = fine_tune_log_reg(
-            model_path= f"fine_tuned/logistic/fine_tuned_{mode}_logistic.pkl",
-            vectorizer_path=f"fine_tuned/logistic/fine_tuned_{mode}_vectorizer.pkl",
-            vectorizer=self.vectorizer,
-            X_train=X_train,
-            y_train=y_train,
-            return_params=True
-        )
-
-        print(f"Best hyperparameters for logistic regression: {best_params}")
-        return best_params
-
-    def fine_tuning_svm(self, reader: Reader, mode: str):
-        """
-        Fine-tune SVM for the given dataset.
-        """
-        print(f"Fine-tuning SVM for {mode}...")
-
-        X_train, X_test, y_train, y_test = self.preprocessed_data.get(mode)
-
-        # Call fine-tune function
-        model_path = f"fine_tuned/SVM/fine_tuned_{mode}_svm.pkl"
-        best_model = fine_tune_svm(
-            model_path=model_path,
-            X_train=X_train,
-            y_train=y_train,
-            X_test=X_test,
-            y_test=y_test
-        )
-
-        print(f"Fine-tuned SVM model saved at {model_path}.")
-        return best_model
-
 
     def save_predictions(self, reader: Reader, mode: str, model: str, fine_tuned=True):
         print(f"Saving predictions for {model} on {mode} dataset...")
@@ -141,8 +123,6 @@ class Experiment_setup:
         print(f"Metrics for {model_name}:")
         for key, value in metrics.items():
             print(f"{key}: {value}")
-
-
 
 
 class Experiments:

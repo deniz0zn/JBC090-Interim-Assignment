@@ -21,12 +21,6 @@ class Dataset:
         self.df = pd.read_csv(self.file_path)
         self.target = "birth_year" if "birth_year" in self.df.columns else "political_leaning"
 
-    # def rename_columns(self):
-    #     if "birth_year" in self.data.columns:
-    #         self.data = self.data.rename(columns={"auhtor_ID" : "author_id", "birth_year" : "label"})
-    #     elif "political_leaning" in self.data.columns:
-    #         self.data = self.data.rename(columns={"auhtor_ID": "author_id", "political_leaning" : "label"})
-
     def gen(self, year: int) -> str:
         if 1946 <= year <= 1964:
             return 'Baby boomers'
@@ -145,6 +139,3 @@ class Reader:
             y = processed_df["political_leaning"]
 
         return train_test_split(X, y, test_size=test_size, random_state=random_state)
-
-
-# df_gen = Reader('datasets/birth_year.csv', tokenize=True).dataset()

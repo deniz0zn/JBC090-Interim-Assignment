@@ -80,7 +80,7 @@ class DataSection:
         plt.show()
 
 
-df_age = pd.read_parquet('datasets/birth_year_tokenized_cleaned.parquet')
+df_age = pd.read_parquet('../datasets/birth_year_tokenized_cleaned.parquet')
 age = DataSection(df_age, 'birth_year')
 print(age)
 # age.visualize_birth_years()

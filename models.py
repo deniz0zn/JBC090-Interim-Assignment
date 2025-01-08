@@ -8,6 +8,8 @@ from sklearn.linear_model import LogisticRegression
 from gensim.models.fasttext import FastText
 from config import __RANDOM_STATE__, test_size, __DEBUG__
 from reader import Reader
+from config_fine_tune import *
+from fine_tune import *
 
 
 class Metrics:
@@ -24,15 +26,21 @@ class Metrics:
         y_pred = self.model.predict(self.X_test)
         y_prob = self.model.predict_proba(self.X_test)
 
-        ## ADD TRY EXCEPT FOR ROC SCORE
-        return (f"Accuracy: {accuracy_score(self.y_test, y_pred):.3f}\n"
-                f"Precision: {precision_score(self.y_test, y_pred, average='weighted'):.3f}\n"
-                f"Recall: {recall_score(self.y_test, y_pred, average='weighted'):.3f}\n"
-                f"F1: {f1_score(self.y_test, y_pred, average='weighted'):.3f}\n"
-                f"Log loss: {log_loss(self.y_test, y_prob):.3f}\n"
-                f"MCC: {matthews_corrcoef(self.y_test, y_pred):.3f}\n"
-                f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}\n"
-                f"Classification report:\n{classification_report(self.y_test, y_pred)}\n")
+        metrics = (f"Accuracy: {accuracy_score(self.y_test, y_pred):.3f}\n"
+                    f"Precision: {precision_score(self.y_test, y_pred, average='weighted'):.3f}\n"
+                    f"Recall: {recall_score(self.y_test, y_pred, average='weighted'):.3f}\n"
+                    f"F1: {f1_score(self.y_test, y_pred, average='weighted'):.3f}\n"
+                    f"Log loss: {log_loss(self.y_test, y_prob):.3f}\n"
+                    f"MCC: {matthews_corrcoef(self.y_test, y_pred):.3f}\n"
+                    f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}\n"
+                    f"Classification report:\n{classification_report(self.y_test, y_pred)}\n")
+
+        try:
+            print(f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}\n")
+        except:
+            print("Cannot Compute AUROC Score")
+
+        return metrics
 
 
 class DataPreprocessor:
@@ -68,15 +76,20 @@ class DataPreprocessor:
         """
         Fit vectorizer with features.
         """
-        X_train, X_test, y_train, y_test = self.reader.split_data(self.test_size, self.random_state)
-        y_train, y_test = self.mapping(y_train, y_test)
+        self.y_train, self.y_test = self.mapping(self.y_train, self.y_test)
 
         print("Fitting the vectorizer...")
-        X_train_vec = self.vectorizer.fit_transform(X_train)
-        X_test_vec = self.vectorizer.transform(X_test)
+        X_train_vec = self.vectorizer.fit_transform(self.X_train)
+        X_test_vec = self.vectorizer.transform(self.X_test)
         print("Vectorizer fitted.\n")
 
-        return X_train_vec, X_test_vec, y_train, y_test
+        return X_train_vec, X_test_vec, self.y_train, self.y_test
+
+    def vectorize_train(self):
+        X_train_vec = self.vectorizer.fit_transform(self.X_train)
+        X_test_vec = self.vectorizer.transform(self.X_test)
+
+        return X_train_vec, X_test_vec
 
 
 class LogisticModel:
@@ -84,17 +97,30 @@ class LogisticModel:
     Run logistic regression model with default parameters and balanced class weights.
     :attributes: preprocessor
     """
-    def __init__(self, preprocessor: DataPreprocessor) -> None:
+    def __init__(self, preprocessor: DataPreprocessor, fine_tuned=False, debug=__DEBUG__) -> None:
         """
         Initialize a LogisticModel class.
         :param preprocessor: DataPreprocessor to preprocess the data
         """
         self.preprocessor = preprocessor
         self.vectorizer = preprocessor.vectorizer
-        self.model = LogisticRegression(class_weight='balanced',
-                                        max_iter=1000,
-                                        random_state=self.preprocessor.random_state
-                                        )
+        self.fine_tuned = fine_tuned
+        self.debug = debug
+
+        if self.fine_tuned:
+            X_train, __ = self.preprocessor.vectorize_train()
+            parameters = fine_tune_log_reg(X_train=X_train, y_train=self.preprocessor.y_train,
+                                           DEBUG=self.debug, mode=self.preprocessor.mode)
+            solver, penalty, C = parameters["solver"], parameters["penalty"], parameters["C"]
+
+            self.model = LogisticRegression(class_weight='balanced', penalty=penalty, C=C, solver= solver,
+                                            max_iter=1000, random_state=self.preprocessor.random_state
+                                            )
+        else:
+            self.model = LogisticRegression(class_weight='balanced',
+                                            max_iter=1000,
+                                            random_state=self.preprocessor.random_state
+                                            )
 
     def fit(self):
         """
@@ -167,50 +193,52 @@ class SVMModel:
     """
     Run logistic regression model with default parameters and balanced class weights.
     """
-    def __init__(self, reader: Reader, X, target: str, test_size=test_size, random_state=__RANDOM_STATE__) -> None:
+    def __init__(self, reader: Reader, X, target: str, fine_tuned=False, test_size=test_size, random_state=__RANDOM_STATE__, debug=__DEBUG__) -> None:
         """
         Initialize an SVMModel class.
+        :param reader: read  and clean data
         :param X: vectorized features
-        :param df: dataset to train and get target
         :param target: target to predict
         :param test_size: size of test data
         :param random_state: seed for reproducibility
         """
         self.reader = reader.dataset()
         self.X = X
-        # self.df = df
         self.target = target
         self.test_size = test_size
         self.random_state = random_state
-        self.model = SVC(probability=True,
-                         class_weight="balanced",
-                         random_state=self.random_state
-                         )
+        self.debug = debug
+
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X,
+                                                                                self.reader[self.target],
+                                                                                test_size=self.test_size,
+                                                                                random_state=self.random_state
+                                                                                )
+        if not fine_tuned:  # use default parameters
+            self.model = SVC(probability=True,
+                             class_weight="balanced",
+                             random_state=self.random_state
+                             )
+        else:
+            parameters = fine_tune_svm(X_train=self.X_train,
+                                       y_train=self.reader[self.target],
+                                       X_test=self.X_test,
+                                       y_test=self.reader[self.target],
+                                       DEBUG=self.debug)
+            C, gamma = parameters["C"], parameters["gamma"]
+            self.model = SVC(probability=True,
+                             class_weight="balanced",
+                             C=C,
+                             gamma=gamma,
+                             random_state=self.random_state
+                             )
 
     def fit(self):
         """
         Fit SVM model with default parameters and print metrics.
         """
-        X_train_vec, X_test_vec, y_train, y_test = train_test_split(self.X,
-                                                                    self.reader[self.target],
-                                                                    test_size=self.test_size,
-                                                                    random_state=self.random_state
-                                                                    )
-        print(f"Parameters before tuning: {self.model.get_params()}\n")
-        self.model.fit(X_train_vec, y_train)
-        print(f"Default model fitted. Metrics: {Metrics(X_test_vec, y_test, self.model)}")
+        print(f"Fitting the model with parameters: {self.model.get_params()}\n")
+        self.model.fit(self.X_train, self.y_train)
+        print(f"SVM model fitted. Metrics: {Metrics(self.X_test, self.y_test, self.model)}")
 
         return self.model
-
-
-## LOGISTIC REGRESSION
-# df_gen = Reader('datasets/birth_year.csv', tokenize=False)
-# preprocessor_df_gen = DataPreprocessor(df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'generation')
-# lr = LogisticModel(preprocessor_df_gen).fit()
-# print(lr)
-
-## SVM
-df_gen = Reader('datasets/birth_year.csv', tokenize=False)#.dataset()
-X = FastTextVectorizer(df_gen['post'].values).transform()
-svm = SVMModel(df_gen, X, df_gen, 'generation').fit()
-print(svm)
