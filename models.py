@@ -12,46 +12,6 @@ from config_fine_tune import *
 from fine_tune import *
 
 
-class Metrics:
-    """
-    Print a model's performance metrics.
-    :attributes: X_test, y_test, model
-    """
-    def __init__(self, X_test, y_test, model) -> None:
-        """
-        Initializes a Metrics object.
-        :param X_test: test data of features
-        :param y_test: test set of target
-        :param model: model used for predictions
-        """
-        self.X_test = X_test
-        self.y_test = y_test
-        self.model = model
-
-    def __str__(self) -> str:
-        """
-        Returns a string representation of the model's performance metrics.
-        :return: string representation of the model's performance metrics.
-        """
-        y_pred = self.model.predict(self.X_test)
-        y_prob = self.model.predict_proba(self.X_test)
-
-        metrics = (f"Accuracy: {accuracy_score(self.y_test, y_pred):.3f}\n"
-                    f"Precision: {precision_score(self.y_test, y_pred, average='weighted'):.3f}\n"
-                    f"Recall: {recall_score(self.y_test, y_pred, average='weighted'):.3f}\n"
-                    f"F1: {f1_score(self.y_test, y_pred, average='weighted'):.3f}\n"
-                    f"Log loss: {log_loss(self.y_test, y_prob):.3f}\n"
-                    f"MCC: {matthews_corrcoef(self.y_test, y_pred):.3f}\n"
-                    f"Classification report:\n{classification_report(self.y_test, y_pred)}\n")
-
-        try:
-            print(f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}")
-        except:
-            print("Cannot Compute AUROC Score")
-
-        return metrics
-
-
 class DataPreprocessor:
     """
     Preprocess features for logistic regression using a vectorizer.
@@ -96,6 +56,9 @@ class DataPreprocessor:
         return X_train_vec, X_test_vec, self.y_train, self.y_test
 
     def vectorize_train(self):
+        """
+        Vectorize training data.
+        """
         X_train_vec = self.vectorizer.fit_transform(self.X_train)
         X_test_vec = self.vectorizer.transform(self.X_test)
 
@@ -105,13 +68,14 @@ class DataPreprocessor:
 class LogisticModel:
     """
     Run logistic regression model with default parameters and balanced class weights.
-    :attributes: preprocessor
+    :attributes: preprocessor, fine_tuned, pred_pol, debug
     """
     def __init__(self, preprocessor: DataPreprocessor, fine_tuned=False, pred_pol=False, debug=__DEBUG__) -> None:
         """
         Initializes a LogisticModel class.
         :param preprocessor: DataPreprocessor to preprocess the data
         :param fine_tuned: run fine-tuned model or not
+        :param pred_pol: run with predicted political leaning or not
         :param debug: debug mode
         """
         self.preprocessor = preprocessor
@@ -123,7 +87,7 @@ class LogisticModel:
         if self.fine_tuned:
             if self.pred_pol:
                 self.X_train = X_with_pred_pol_lean(self.preprocessor.reader.dataset(), self.vectorizer)
-                print('PRED POL TRUE')
+                print('X_train for predicted political leaning used.')
             else:
                 self.X_train, __ = self.preprocessor.vectorize_train()
             parameters = fine_tune_log_reg(X_train=self.X_train, y_train=self.preprocessor.y_train,
@@ -138,16 +102,14 @@ class LogisticModel:
                                             max_iter=1000, random_state=self.preprocessor.random_state
                                             )
 
-    def fit(self):
+    def fit(self) -> LogisticRegression:
         """
         Fit logistic regression model with default parameters and balanced class weights and print metrics.
+        :return: fitted logistic regression model.
         """
         X_train_vec, X_test_vec, y_train, y_test = self.preprocessor.preprocess()
 
-        parameters_before_tuning = self.model.get_params()
-        print(f"Parameters before tuning: {parameters_before_tuning}\n")
-
-        print("Training model...")
+        print(f"Fitting the model with parameters: {self.model.get_params()}\n")
         self.model.fit(X_test_vec, y_test)
         print(f"Model fitted. Metrics:\n{Metrics(X_test_vec, y_test, self.model)}")
 
@@ -173,9 +135,10 @@ class FastTextVectorizer:
         self.min_count = min_count
         self.model = None
 
-    def create_model(self):
+    def create_model(self) -> FastText:
         """
         Create FastText embeddings model.
+        :return: FastText word embeddings model.
         """
         processed_texts = [text.split() for text in self.texts]
         self.model = FastText(sentences=processed_texts,
@@ -186,17 +149,20 @@ class FastTextVectorizer:
                               )
         return self.model
 
-    def transform(self):
+    def transform(self) -> np.array:
         """
         Fit FastText embeddings model with default parameters.
+        :return: vectorized features.
         """
         if not self.model:
             self.model = self.create_model()
         return np.array([self.get_text_embedding(text) for text in self.texts])
 
-    def get_text_embedding(self, text):
+    def get_text_embedding(self, text: str) -> np.array:
         """
         Return text embeddings for feature X.
+        :param text: text to vectorize
+        :return: embedding vector.
         """
         words = text.split()
         vectors = [self.model.wv[word] for word in words if word in self.model.wv]
@@ -208,6 +174,7 @@ class FastTextVectorizer:
 class SVMModel:
     """
     Run logistic regression model with default parameters and balanced class weights.
+    :attributes: reader, X, target, fine_tuned, test_size, random_state, debug
     """
     def __init__(self, reader: Reader, X, target: str, fine_tuned=False, test_size=test_size, random_state=__RANDOM_STATE__, debug=__DEBUG__) -> None:
         """
@@ -215,12 +182,15 @@ class SVMModel:
         :param reader: read  and clean data
         :param X: vectorized features
         :param target: target to predict
+        :param fine_tuned: run fine-tuned model or not
         :param test_size: size of test data
         :param random_state: seed for reproducibility
+        :param debug: debug mode
         """
         self.reader = reader.dataset()
         self.X = X
         self.target = target
+        self.fine_tuned = fine_tuned
         self.test_size = test_size
         self.random_state = random_state
         self.debug = debug
@@ -230,7 +200,7 @@ class SVMModel:
                                                                                 test_size=self.test_size,
                                                                                 random_state=self.random_state
                                                                                 )
-        if not fine_tuned:  # use default parameters
+        if not self.fine_tuned:  # use default parameters
             self.model = SVC(probability=True,
                              class_weight="balanced",
                              random_state=self.random_state
@@ -249,9 +219,10 @@ class SVMModel:
                              random_state=self.random_state
                              )
 
-    def fit(self):
+    def fit(self) -> SVC:
         """
-        Fit SVM model with default parameters and print metrics.
+        Fit SVM model and print metrics.
+        :return: fitted SVM model.
         """
         print(f"Fitting the model with parameters: {self.model.get_params()}\n")
         self.model.fit(self.X_train, self.y_train)

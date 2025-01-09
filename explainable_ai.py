@@ -1,14 +1,54 @@
 import pandas as pd
 pd.set_option('future.no_silent_downcasting', True)  # remove future warning about .fillna()
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score, log_loss, \
+    matthews_corrcoef, roc_auc_score
 import numpy as np
-import joblib
 from lime.lime_text import LimeTextExplainer
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from config import __RANDOM_STATE__
 from functools import reduce
 
-### FOR DEBUG: N=10 BUT SHOULD BE N=100 IN FINAL!
+
+class Metrics:
+    """
+    Print a model's performance metrics.
+    :attributes: X_test, y_test, model
+    """
+    def __init__(self, X_test, y_test, model) -> None:
+        """
+        Initializes a Metrics object.
+        :param X_test: test data of features
+        :param y_test: test set of target
+        :param model: model used for predictions
+        """
+        self.X_test = X_test
+        self.y_test = y_test
+        self.model = model
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the model's performance metrics.
+        :return: string representation of the model's performance metrics.
+        """
+        y_pred = self.model.predict(self.X_test)
+        y_prob = self.model.predict_proba(self.X_test)
+
+        metrics = (f"Accuracy: {accuracy_score(self.y_test, y_pred):.3f}\n"
+                    f"Precision: {precision_score(self.y_test, y_pred, average='weighted'):.3f}\n"
+                    f"Recall: {recall_score(self.y_test, y_pred, average='weighted'):.3f}\n"
+                    f"F1: {f1_score(self.y_test, y_pred, average='weighted'):.3f}\n"
+                    f"Log loss: {log_loss(self.y_test, y_prob):.3f}\n"
+                    f"MCC: {matthews_corrcoef(self.y_test, y_pred):.3f}\n"
+                    f"Classification report:\n{classification_report(self.y_test, y_pred)}\n")
+
+        try:
+            print(f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}")
+        except:
+            print("Cannot Compute AUROC Score")
+
+        return metrics
+
 
 class LimeEvaluator:
     """
@@ -31,10 +71,10 @@ class LimeEvaluator:
     def sample(self) -> pd.DataFrame:
         """
         Select a number of random rows from each generation.
-        :return: sampled dataframe
+        :return: sampled dataframe.
         """
         df_sample = self.df.groupby("generation")[["post", "predicted_political_leaning",
-                                                   "generation"]].apply(lambda x: x.sample(n=10, replace=True,
+                                                   "generation"]].apply(lambda x: x.sample(n=100, replace=True,
                                                                                            random_state=self.random_state))
         df_sample = df_sample.reset_index(drop=True)
         return df_sample
@@ -43,14 +83,14 @@ class LimeEvaluator:
         """
         Vectorize raw text and pass to predict_proba.
         :param texts: list of raw texts
-        :return: vectorized texts
+        :return: vectorized texts.
         """
         return self.model.predict_proba(self.tfidf.transform(texts))
 
     def explain(self) -> dict[str, pd.DataFrame]:
         """
         Initialize explainer and add most important features to each generation and political leaning.
-        :return: dictionary of all dataframes conatining most important features.
+        :return: dictionary of all dataframes containing most important features.
         """
         explainer = LimeTextExplainer(class_names=self.model.classes_)
         generations = ['Baby boomers', 'Generation X', 'Millennials', 'Generation Z']
@@ -90,7 +130,7 @@ class LimeEvaluator:
         Find unique features for a specific dataframe compared to other dataframes.
         :param df_target: target dataframe to find unique features for
         :param dfs_other: other dataframe to compare feature uniqueness with
-        :return:
+        :return: list of unique features.
         """
         all_features = set().union(*(df['Feature'] for df in dfs_other))
         unique_rows = df_target[~df_target['Feature'].isin(all_features)]
