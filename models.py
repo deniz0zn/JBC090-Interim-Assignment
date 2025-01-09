@@ -14,15 +14,25 @@ from fine_tune import *
 
 class Metrics:
     """
-    Print model's performance metrics.
+    Print a model's performance metrics.
     :attributes: X_test, y_test, model
     """
     def __init__(self, X_test, y_test, model) -> None:
+        """
+        Initializes a Metrics object.
+        :param X_test: test data of features
+        :param y_test: test set of target
+        :param model: model used for predictions
+        """
         self.X_test = X_test
         self.y_test = y_test
         self.model = model
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the model's performance metrics.
+        :return: string representation of the model's performance metrics.
+        """
         y_pred = self.model.predict(self.X_test)
         y_prob = self.model.predict_proba(self.X_test)
 
@@ -32,7 +42,6 @@ class Metrics:
                     f"F1: {f1_score(self.y_test, y_pred, average='weighted'):.3f}\n"
                     f"Log loss: {log_loss(self.y_test, y_prob):.3f}\n"
                     f"MCC: {matthews_corrcoef(self.y_test, y_pred):.3f}\n"
-                    f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}\n"
                     f"Classification report:\n{classification_report(self.y_test, y_pred)}\n")
 
         try:
@@ -50,7 +59,7 @@ class DataPreprocessor:
     """
     def __init__(self, reader: Reader.dataset, vectorizer, mode, test_size=test_size, random_state=__RANDOM_STATE__) -> None:
         """
-        Initialize a DataPreprocessor class.
+        Initializes a DataPreprocessor class.
         :param reader: Reader object
         :param vectorizer: vectorizer to use
         :param mode: dataset for preprocessing
@@ -98,29 +107,35 @@ class LogisticModel:
     Run logistic regression model with default parameters and balanced class weights.
     :attributes: preprocessor
     """
-    def __init__(self, preprocessor: DataPreprocessor, fine_tuned=False, debug=__DEBUG__) -> None:
+    def __init__(self, preprocessor: DataPreprocessor, fine_tuned=False, pred_pol=False, debug=__DEBUG__) -> None:
         """
-        Initialize a LogisticModel class.
+        Initializes a LogisticModel class.
         :param preprocessor: DataPreprocessor to preprocess the data
+        :param fine_tuned: run fine-tuned model or not
+        :param debug: debug mode
         """
         self.preprocessor = preprocessor
         self.vectorizer = preprocessor.vectorizer
         self.fine_tuned = fine_tuned
+        self.pred_pol = pred_pol
         self.debug = debug
 
         if self.fine_tuned:
-            X_train, __ = self.preprocessor.vectorize_train()
-            parameters = fine_tune_log_reg(X_train=X_train, y_train=self.preprocessor.y_train,
+            if self.pred_pol:
+                self.X_train = X_with_pred_pol_lean(self.preprocessor.reader.dataset(), self.vectorizer)
+                print('PRED POL TRUE')
+            else:
+                self.X_train, __ = self.preprocessor.vectorize_train()
+            parameters = fine_tune_log_reg(X_train=self.X_train, y_train=self.preprocessor.y_train,
                                            DEBUG=self.debug, mode=self.preprocessor.mode)
             solver, penalty, C = parameters["solver"], parameters["penalty"], parameters["C"]
 
-            self.model = LogisticRegression(class_weight='balanced', penalty=penalty, C=C, solver= solver,
+            self.model = LogisticRegression(class_weight="balanced", penalty=penalty, C=C, solver=solver,
                                             max_iter=1000, random_state=self.preprocessor.random_state
                                             )
         else:
-            self.model = LogisticRegression(class_weight='balanced',
-                                            max_iter=1000,
-                                            random_state=self.preprocessor.random_state
+            self.model = LogisticRegression(class_weight="balanced",
+                                            max_iter=1000, random_state=self.preprocessor.random_state
                                             )
 
     def fit(self):
@@ -132,9 +147,9 @@ class LogisticModel:
         parameters_before_tuning = self.model.get_params()
         print(f"Parameters before tuning: {parameters_before_tuning}\n")
 
-        print("Training the default logistic regression model...")
+        print("Training model...")
         self.model.fit(X_test_vec, y_test)
-        print(f"Default model fitted. Metrics: {Metrics(X_test_vec, y_test, self.model)}")
+        print(f"Model fitted. Metrics: {Metrics(X_test_vec, y_test, self.model)}")
 
         return self.model
 
@@ -146,7 +161,7 @@ class FastTextVectorizer:
     """
     def __init__(self, texts, vector_size=100, window=5, min_count=1) -> None:
         """
-        Initialize a FastTextVectorizer class.
+        Initializes a FastTextVectorizer class.
         :param texts: string to vectorize
         :param vector_size: dimensionality of vectors
         :param window: context window size
@@ -196,7 +211,7 @@ class SVMModel:
     """
     def __init__(self, reader: Reader, X, target: str, fine_tuned=False, test_size=test_size, random_state=__RANDOM_STATE__, debug=__DEBUG__) -> None:
         """
-        Initialize an SVMModel class.
+        Initializes an SVMModel class.
         :param reader: read  and clean data
         :param X: vectorized features
         :param target: target to predict
