@@ -67,8 +67,7 @@ class RunModels:
         :return: dataframe with predicted political leaning.
         """
         if self.preprocessor.mode == "generation":
-            self.df.dataset()["predicted_political_leaning"] = model.predict(self.preprocessor.vectorize_train()[0])
-            # self.df.dataset()["predicted_political_leaning"] = model.predict(self.X_train_vec)
+            self.df.dataset()["predicted_political_leaning"] = model.predict(self.tfidf.transform(self.df.dataset()["generation"]))
             self.df.dataset()["predicted_political_leaning"] = self.df.dataset()["predicted_political_leaning"].map({0: "left", 1: "center", 2: "right"})
         return self.df.dataset()
 
@@ -76,11 +75,13 @@ class RunModels:
         """
         Run fine-tuned logistic regression model on dataframe with added predicted political leaning column.
         """
-        model = self.run_fine_tuned_logistic_regression(pred_pol=False)
-        df = self.predict_political_leaning(model)
-        model_with_pol = self.run_fine_tuned_logistic_regression(pred_pol=True)
+        model = self.run_fine_tuned_logistic_regression(pred_pol=False)  # run fine-tuned to get model
+        df = self.predict_political_leaning(model)  # predict with fine-tuned model
+        model_with_pol = self.run_fine_tuned_logistic_regression(pred_pol=True)  # -> not sure about this
+        ## somehow, i need X redistributed into train and test set, and re-run fine-tuned model for predictions
+        ## df with added col needs to be saved and subsequently used for self.run_explainability
         X = X_with_pred_pol_lean(df=df, tfidf=self.tfidf)  # X with added pred pol lean col
-        if not debug_X_with_pred_pol_lean(X, model_with_pol.fit()):  # shapes do not match for vectorizing
+        if not debug_X_with_pred_pol_lean(X, model_with_pol):  # shapes do not match for vectorizing
             return "Features do not match. Cannot run model with added predicted political leaning column."
         return model.fit()
 

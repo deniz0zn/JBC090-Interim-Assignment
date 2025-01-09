@@ -45,7 +45,7 @@ class Metrics:
                     f"Classification report:\n{classification_report(self.y_test, y_pred)}\n")
 
         try:
-            print(f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}\n")
+            print(f"AUROC: {roc_auc_score(self.y_test, y_prob, multi_class='ovo'):.3f}")
         except:
             print("Cannot Compute AUROC Score")
 
@@ -149,7 +149,7 @@ class LogisticModel:
 
         print("Training model...")
         self.model.fit(X_test_vec, y_test)
-        print(f"Model fitted. Metrics: {Metrics(X_test_vec, y_test, self.model)}")
+        print(f"Model fitted. Metrics:\n{Metrics(X_test_vec, y_test, self.model)}")
 
         return self.model
 
@@ -255,6 +255,6 @@ class SVMModel:
         """
         print(f"Fitting the model with parameters: {self.model.get_params()}\n")
         self.model.fit(self.X_train, self.y_train)
-        print(f"SVM model fitted. Metrics: {Metrics(self.X_test, self.y_test, self.model)}")
+        print(f"SVM model fitted. Metrics:\n{Metrics(self.X_test, self.y_test, self.model)}")
 
         return self.model

@@ -70,7 +70,7 @@ def fine_tune_log_reg(X_train, y_train, param_grid=param_grid, DEBUG=__DEBUG__, 
 
 
 def X_with_pred_pol_lean(df, tfidf):
-    X_post = tfidf.fit_transform(df['post'])
+    X_post = tfidf.transform(df['post'])
     X_pol = pd.get_dummies(df['predicted_political_leaning'], drop_first=True)
     X_combined = hstack([X_post, X_pol.values]).tocsr()
     return X_combined
