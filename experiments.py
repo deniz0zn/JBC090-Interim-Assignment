@@ -26,7 +26,7 @@ class RunModels:
         self.preprocessor = preprocessor
         self.tfidf = tfidf
         self.file_path = file_path
-        self.df = Reader(self.file_path, tokenize=False)
+        self.df = Reader(self.file_path, tokenize=True)
         self.X = FastTextVectorizer(self.df.dataset()['post'].values).transform()  # for SVM
 
     def run_default_logistic_regression(self) -> LogisticRegression:
@@ -83,7 +83,7 @@ t0 = time.time()  # see time taken
 # -- BIRTH YEAR--
 df = Dataset(BY_PATH)
 print(df)  # print information about birth_year dataset
-df_gen = Reader(BY_PATH, tokenize=False)
+df_gen = Reader(BY_PATH, tokenize=True)
 preprocessor_df_gen = DataPreprocessor(df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), "generation")
 run_models = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), BY_PATH)
 run_models.run_default_logistic_regression()  # logistic regression with default parameters
@@ -97,6 +97,7 @@ run_models.run_explainability(df=df_pred_pol, model=pred_model)  # run AI explai
 # -- POLITICAL LEANING --
 df = Dataset(PL_PATH)
 print(df)  # print information about political leaning dataset
+df_gen = Reader(PL_PATH, tokenize=True)
 preprocessor_df_gen = DataPreprocessor(df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), "political_leaning")
 run_models = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), PL_PATH)
 run_models.run_default_logistic_regression()  # logistic regression with default parameters
