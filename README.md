@@ -47,6 +47,9 @@ The following code functions with the up-to-date version of the given libraries.
 | `shap`          | 0.42.1         |
 | `gensim`        | 4.3.1          |
 | `numpy`         | 1.26.0         |
+| `matplotlib`    | 3.8.0          |
+| `lime`          | 0.2.0.1        |
+| `fasttext`      | 0.9.2          |
 
 ## Resources
 
