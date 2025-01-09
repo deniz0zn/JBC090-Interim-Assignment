@@ -1,55 +1,110 @@
-from imblearn.over_sampling import RandomOverSampler
+import time
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from models import LogisticModel, FastTextVectorizer, SVMModel, DataPreprocessor
 from imblearn.pipeline import Pipeline
 from config import PL_PATH, BY_PATH, __DEBUG__
 from reader import Reader
 from evaluation import Evaluator
-from fine_tune import fine_tune_log_reg, fine_tune_svm
-from models import LogisticModel, FastTextVectorizer, SVMModel
-# from explainable_ai import LimeEvaluator
+from fine_tune import X_with_pred_pol_lean, debug_X_with_pred_pol_lean
+from explainable_ai import LimeEvaluator
 
 
 class RunModels:
     """
-    Run all models for a dataset.
+    Class to run all models for a dataset.
+    Print unique features if dataset contains `generation` target.
+    :attributes: preprocessor, tfidf, file_path
     """
-    def __init__(self, preprocessor: DataPreprocessor, tfidf: TfidfVectorizer, file_path):
+    def __init__(self, preprocessor: DataPreprocessor, tfidf: TfidfVectorizer, file_path: str) -> None:
+        """
+        Initializes a RunModels object.
+        :param preprocessor: DataPreprocessor to vectorize features for logistic regression
+        :param tfidf: vectorizer for logistic regression
+        :param file_path: path to dataset
+        """
         self.preprocessor = preprocessor
         self.tfidf = tfidf
         self.file_path = file_path
         self.df = Reader(self.file_path, tokenize=False)
         # self.X_train_vec, _ = self.preprocessor.vectorize_train()  # for log-reg
-        self.X = FastTextVectorizer(self.df.dataset()['post'].values).transform()  # for SVM
+        # self.X = FastTextVectorizer(self.df.dataset()['post'].values).transform()  # for SVM
 
-    def run_default_logistic_regression(self):
+    def run_default_logistic_regression(self) -> LogisticRegression:
+        """
+        Run logistic regression using default parameters.
+        :return: logistic regression model with default parameters.
+        """
         return LogisticModel(DataPreprocessor(self.df, self.tfidf, self.preprocessor.mode)).fit()
 
-    def run_fine_tuned_logistic_regression(self):
-        return LogisticModel(DataPreprocessor(self.df, self.tfidf, self.preprocessor.mode), fine_tuned = True).fit()
+    def run_fine_tuned_logistic_regression(self, pred_pol=False) -> LogisticRegression:
+        """
+        Run logistic regression using fine-tuned parameters.
+        :return: logistic regression model with fine-tuned parameters.
+        """
+        return LogisticModel(DataPreprocessor(self.df, self.tfidf, self.preprocessor.mode), fine_tuned=True, pred_pol=pred_pol).fit()
 
-    def run_default_svm(self):
+    def run_default_svm(self) -> SVC:
+        """
+        Run SVM using default parameters.
+        :return: SVM model with default parameters.
+        """
         return SVMModel(reader=self.df, X=self.X, target=self.preprocessor.mode).fit()
 
-    def run_fine_tuned_svm(self):
-        return SVMModel(self.df, self.X, self.preprocessor.mode, fine_tuned=True).fit()
+    def run_fine_tuned_svm(self) -> SVC:
+        """
+        Run SVM using fine-tuned parameters.
+        :return: SVM model with fine-tuned parameters.
+        """
+        return SVMModel(reader=self.df, X=self.X, target=self.preprocessor.mode, fine_tuned=True).fit()
 
-    def add_predicted_political_leaning(self, model):  # svm fine tuned used
+    def predict_political_leaning(self, model) -> pd.DataFrame:
+        """
+        Predict political leaning using fine-tuned model.
+        :param model: fine-tuned model to use
+        :return: dataframe with predicted political leaning.
+        """
         if self.preprocessor.mode == "generation":
-            self.df.dataset()['predicted_political_leaning'] = model.predict(self.X)
-            self.df.dataset()['predicted_political_leaning'] = self.df.dataset()['predicted_political_leaning'].map({0: 'left',1: 'center',2: 'right'})
-        return self.df
+            self.df.dataset()["predicted_political_leaning"] = model.predict(self.preprocessor.vectorize_train()[0])
+            # self.df.dataset()["predicted_political_leaning"] = model.predict(self.X_train_vec)
+            self.df.dataset()["predicted_political_leaning"] = self.df.dataset()["predicted_political_leaning"].map({0: "left", 1: "center", 2: "right"})
+        return self.df.dataset()
+
+    def run_fine_tuned_log_with_pol(self) -> str | LogisticRegression:
+        """
+        Run fine-tuned logistic regression model on dataframe with added predicted political leaning column.
+        """
+        model = self.run_fine_tuned_logistic_regression(pred_pol=False)
+        df = self.predict_political_leaning(model)
+        model_with_pol = self.run_fine_tuned_logistic_regression(pred_pol=True)
+        X = X_with_pred_pol_lean(df=df, tfidf=self.tfidf)  # X with added pred pol lean col
+        if not debug_X_with_pred_pol_lean(X, model_with_pol.fit()):  # shapes do not match for vectorizing
+            return "Features do not match. Cannot run model with added predicted political leaning column."
+        return model.fit()
+
+    def run_explainability(self, model: LogisticModel) -> None:
+        """
+        If target of dataset is `generation`, add predicted political leaning column to dataframe.
+        Use Lime to print unique features for each generation and its prediction.
+        :param model: model that predicts and explains political leaning
+        :return:
+        """
+        df = self.predict_political_leaning(self.run_fine_tuned_log_with_pol())
+        explainer = LimeEvaluator(df, model.fit(), self.tfidf)
+        explainer.unique_all_generations(explainer.explain())
 
 
-
+t0 = time.time()  # see time taken
 df_gen = Reader('datasets/birth_year.csv', tokenize=False)
 preprocessor_df_gen = DataPreprocessor(df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'generation')
-# lr = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'datasets/birth_year.csv')
-# lr.run_default_logistic_regression()
-# lr.run_fine_tuned_logistic_regression()
-svm = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'datasets/birth_year.csv')
-svm.run_fine_tuned_svm()
-### update: both svm models worked!!
+print("DataPreprocessor created.")
+run = RunModels(preprocessor_df_gen, TfidfVectorizer(use_idf=True, max_df=0.95), 'datasets/birth_year.csv')
+print("RunModels created.")
+run.run_fine_tuned_log_with_pol()
+# run.run_explainability(model)
+print(f"Time taken: {round(((time.time() - t0) / 60), 2)} minutes")
 
 
 class Experiment_setup:
@@ -70,8 +125,6 @@ class Experiment_setup:
             self.preprocessed_data[mode] = preprocessor.preprocess()
             self.vectorizer = preprocessor.vectorizer
         return self.preprocessed_data[mode]
-
-
 
     def run_pipeline(self, reader: Reader, mode: str, model:str, top_n = 5, fine_tune= False):
         """
@@ -236,16 +289,8 @@ class Experiments:
         evaluator.top_words(top_n=5)
 
 
-
 # setup = Experiment_setup(BY_PATH, PL_PATH)
 # experiments = Experiments(setup)
 # experiments.phase_1()
 # experiments.phase_2()
 # experiments.phase_3()
-
-
-
-
-
-
-
