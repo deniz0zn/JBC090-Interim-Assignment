@@ -1,3 +1,5 @@
+import pandas as pd
+from scipy.sparse import hstack, csr_matrix
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
@@ -40,7 +42,6 @@ def fine_tune_svm(X_train, y_train, X_test, y_test, DEBUG=__DEBUG__):
                 best_model = svm
                 best_score = score
 
-
     return best_model.get_params()
 
 
@@ -67,3 +68,34 @@ def fine_tune_log_reg(X_train, y_train, param_grid=param_grid, DEBUG=__DEBUG__, 
     grid_search.fit(X_train, y_train)
     return grid_search.best_params_
 
+
+def X_with_pred_pol_lean(df, tfidf):
+    X_post = tfidf.fit_transform(df['post'])
+    X_pol = pd.get_dummies(df['predicted_political_leaning'], drop_first=True)
+    X_combined = hstack([X_post, X_pol.values]).tocsr()
+    return X_combined
+
+
+def debug_X_with_pred_pol_lean(X, model):
+    """
+    Trim or add features such that dimensions of different X columns match.
+    """
+    print(f"Shape of X_combined: {X.shape}\nShape of model.coef_: {model.coef_.shape}")
+
+    try:
+        if X.shape[1] != model.coef_.shape[1]:
+            print(f"Feature mismatch detected: X_combined has {X.shape[1]} features, but model expects {model.coef_.shape[1]} features.")
+    except ValueError as e:
+        print(f"Error: {e}\nAttempting to debug and fix feature mismatch...")
+        feature_diff = X.shape[1] - model.coef_.shape[1]
+        if feature_diff > 0:
+            print(f"X_combined has {feature_diff} extra features. Trimming features...")
+            X = X[:, :model.coef_.shape[1]]
+        elif feature_diff < 0:
+            print(f"X_combined is missing {-feature_diff} features. Adding zero-padding...")
+            missing_features = -feature_diff
+            zero_padding = csr_matrix((X.shape[0], missing_features))
+            X = hstack([X, zero_padding]).tocsr()
+
+    print(f"Fixed shape of X_combined: {X.shape}")
+    return X.shape[1] == model.coef_.shape[1]
