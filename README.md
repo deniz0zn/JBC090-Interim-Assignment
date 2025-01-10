@@ -28,6 +28,21 @@ A tl;dr which highlights some points why someone who found your research code sh
 - Checked the differences in metrics and employed explainable AI libraries to see if the addition of the political leaning column created any value for the classification task.
 - Checked for robustness. (More on this later)
 
+## Installation
+1. Clone the repository:
+   ```shell
+   git clone https://github.com/deniz0zn/JBC090-Interim-Assignment.git 
+   ```
+2. Install dependencies:
+   ```shell
+   pip install -r requirements.txt
+   ```
+3. Add the `birth_year.csv` and `political_leaning.csv` into the project directory and change the `PL_path` and `BY_path` in `config.py` file
+   ```python
+   PL_path = ["PATH OF POLITICAL LEANING DATASET"]
+   BY_path = ["PATH OF BIRTH YEAR DATASET"]
+
+
 ## Reproduction
 
 Awaiting the final pipeline from Deniz.
