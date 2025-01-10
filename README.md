@@ -28,10 +28,9 @@ A tl;dr which highlights some points why someone who found your research code sh
 - Solved the Imbalance problem in both age and political leaning datasets by adjusting model weights.
 - Trained and predicted each model on both datasets independently.
 - Fine-tuned each model for better perfromance for each classification task.
-- Used the models that were fine-tuned on political leaning dataset to predict the political views of the entries in the age dataset.
-- Predicted the generation group again with the addition of the political leaning column.
-- Checked the differences in metrics and employed explainable AI libraries to see if the addition of the political leaning column created any value for the classification task.
-- Checked for robustness. (More on this later)
+- Used political leaning as a predictor for predicting Generation.
+- Checked the differences in metrics and employed explainable AI libraries to see underlying meanings behind important features.
+- Evaluated the models with metrics regarding robustness and performance.
 
 ## Reproduction
 
