@@ -74,9 +74,9 @@ def X_with_pred_pol_lean(df, tfidf, model):
     X_pol = pd.get_dummies(df['predicted_political_leaning'], drop_first=True)
     X_combined = hstack([X_post, X_pol.values]).tocsr()
     print(f"Shape of X_combined: {X_combined.shape}\nShape of model.coef_: {model.coef_.shape}")
-    right = True #False?
+    right = False
 
-    while not right:
+    while not right:  # fix until dimensions are correct
         try:
             if X_combined.shape[1] != model.coef_.shape[1]:
                 print(
