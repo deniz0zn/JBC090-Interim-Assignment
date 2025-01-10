@@ -70,7 +70,7 @@ class RunModels:
         :param vectorizer: vectorizer to use
         :return: dataframe with predicted political leaning.
         """
-        print(f"Adding the prodicted political leaning column to the 'generatiom' dataset.")
+        print(f"Adding the predicted political leaning column to the 'generation' dataset.")
         df["predicted_political_leaning"] = model.predict(vectorizer.transform(df["post"]))
         df["predicted_political_leaning"] = df["predicted_political_leaning"].map({0: "left", 1: "center", 2: "right"})
         return df

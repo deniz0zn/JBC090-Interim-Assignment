@@ -87,10 +87,6 @@ class LogisticModel:
         self.debug = debug
 
         if self.fine_tuned:
-            # if self.pred_pol:
-            #     self.X_train = X_with_pred_pol_lean(self.preprocessor.reader.dataset(), self.vectorizer)
-            #     print('X_train for predicted political leaning used.')
-            # else:
             self.X_train, __ = self.preprocessor.vectorize_train()
             parameters = fine_tune_log_reg(X_train=self.X_train, y_train=self.preprocessor.y_train,
                                            DEBUG=self.debug, mode=self.preprocessor.mode)
