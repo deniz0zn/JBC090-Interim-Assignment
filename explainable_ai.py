@@ -92,7 +92,6 @@ class LimeEvaluator:
         Initialize explainer and add most important features to each generation and political leaning.
         :return: dictionary of all dataframes containing most important features.
         """
-        print('running')
         explainer = LimeTextExplainer(class_names=self.model.classes_)
         generations = ['Baby boomers', 'Generation X', 'Millennials', 'Generation Z']
         leanings = ['left', 'center', 'right']

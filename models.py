@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from gensim.models.fasttext import FastText
-from config import __RANDOM_STATE__, test_size, __DEBUG__, param_grid
+from config import __RANDOM_STATE__, test_size, __DEBUG__, param_grid, PL_PATH
 from reader import Reader
 from config_fine_tune import *
 from fine_tune import *
@@ -48,10 +48,10 @@ class DataPreprocessor:
         """
         self.y_train, self.y_test = self.mapping(self.y_train, self.y_test)
 
-        print("Fitting the vectorizer...")
+        print(f"\nFitting the vectorizer...")
         X_train_vec = self.vectorizer.fit_transform(self.X_train)
         X_test_vec = self.vectorizer.transform(self.X_test)
-        print("Vectorizer fitted.\n")
+        print(f"Vectorizer fitted.\n")
 
         return X_train_vec, X_test_vec, self.y_train, self.y_test
 
@@ -59,8 +59,10 @@ class DataPreprocessor:
         """
         Vectorize training data.
         """
+        print(f"\nTransforming the vectorizer...")
         X_train_vec = self.vectorizer.fit_transform(self.X_train)
         X_test_vec = self.vectorizer.transform(self.X_test)
+        print(f"Vectorizer transformed.\n")
 
         return X_train_vec, X_test_vec
 
@@ -85,11 +87,11 @@ class LogisticModel:
         self.debug = debug
 
         if self.fine_tuned:
-            if self.pred_pol:
-                self.X_train = X_with_pred_pol_lean(self.preprocessor.reader.dataset(), self.vectorizer)
-                print('X_train for predicted political leaning used.')
-            else:
-                self.X_train, __ = self.preprocessor.vectorize_train()
+            # if self.pred_pol:
+            #     self.X_train = X_with_pred_pol_lean(self.preprocessor.reader.dataset(), self.vectorizer)
+            #     print('X_train for predicted political leaning used.')
+            # else:
+            self.X_train, __ = self.preprocessor.vectorize_train()
             parameters = fine_tune_log_reg(X_train=self.X_train, y_train=self.preprocessor.y_train,
                                            DEBUG=self.debug, mode=self.preprocessor.mode)
             solver, penalty, C = parameters["solver"], parameters["penalty"], parameters["C"]
