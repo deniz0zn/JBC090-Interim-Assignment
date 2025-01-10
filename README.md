@@ -28,7 +28,8 @@ A tl;dr which highlights some points why someone who found your research code sh
 - Checked the differences in metrics and employed explainable AI libraries to see if the addition of the political leaning column created any value for the classification task.
 - Checked for robustness. (More on this later)
 
-## Installation
+## Reproduction
+
 1. Clone the repository:
    ```shell
    git clone https://github.com/deniz0zn/JBC090-Interim-Assignment.git 
@@ -41,13 +42,10 @@ A tl;dr which highlights some points why someone who found your research code sh
    ```python
    PL_path = ["PATH OF POLITICAL LEANING DATASET"]
    BY_path = ["PATH OF BIRTH YEAR DATASET"]
-
-
-## Reproduction
-
-Awaiting the final pipeline from Deniz.
-
-Instructions on how to reproduce the results in the paper (and how to get the data to do so), and what system it was built on (I generally provide Python version and OS, could be better, but it’s something).
+4. Run the experiments:
+   ```Shell
+   python experiments.py
+   ```
 
 ## Dependencies
 The following code functions with the up-to-date version of the given libraries.
@@ -73,7 +71,20 @@ Based on a power consumption of 0.108kW and the global average emission factor o
 
 ## Configuration
 
-Input from Deniz.
+#### General Parameters (config.py):
+- `__RANDOM_STATE__`: Change the random state for reproducibility.
+- `test_size`: Adjust the proportion of the dataset allocated to training and testing.
+
+#### Fine-Tuning (config.py and config_fine_tune.py):
+
+1. **Set `__DEBUG__` in `config.py`**:
+   - `True`: Use pre-existing fine-tuned hyperparameters from `config_fine_tune.py`.
+   - `False`: Enable runtime fine-tuning to optimize model performance.
+
+2. **Update hyperparameters in `config_fine_tune.py`**:
+   - **Logistic Regression**: Modify `penalty`, `solver`, and `C`.
+   - **SVM**: Adjust `C` and `gamma`.
+
 
 ## Experimental Manupilation
 
