@@ -74,7 +74,7 @@ class LimeEvaluator:
         :return: sampled dataframe.
         """
         df_sample = self.df.groupby("generation")[["post", "predicted_political_leaning",
-                                                   "generation"]].apply(lambda x: x.sample(n=10, replace=True,
+                                                   "generation"]].apply(lambda x: x.sample(n=100, replace=True,
                                                                                            random_state=self.random_state))
         df_sample = df_sample.reset_index(drop=True)
         return df_sample
