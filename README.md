@@ -11,14 +11,14 @@
 How can stylometry and NLP techniques be combined to develop robust, interpretable, and fair models for Reddit author profiling, specifically to predict a user’s generation based on their political views, while evaluating the explanatory power of political views in generation prediction?
 
 # Overview
-- [Paper Details](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#research-question)
-- [tl;dr](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#tldr)
-- [Reproduction](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#reproduction)
-- [Dependencies](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#dependencies)
-- [Resources](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#resources)
-- [Experimental Manupilation](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#experimental-manupilation)
-      
+- [Paper Details](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#paper-details)
+- [tl;dr](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#tldr)
+- [Reproduction](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#reproduction)
+- [Dependencies](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#dependencies)
+- [Resources](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#resources)
+- [Experimental Manupilation](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#experimental-manipulation)
 
+  
 ## Paper Details
 
 ## tl;dr
