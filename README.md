@@ -1,7 +1,5 @@
 # Combining Stylometry and NLP for Fair, Robust Reddit Author Profiling on Political Leaning and Generation
 
-## JBC090 Interim Assignment
-
 ## Group 3
 - Kaan Mutlu Çelik (1785559)
 - Juliette Hattingh-Haasbroek (1779192)
@@ -13,6 +11,13 @@
 How can stylometry and NLP techniques be combined to develop robust, interpretable, and fair models for Reddit author profiling, specifically to predict a user’s generation based on their political views, while evaluating the explanatory power of political views in generation prediction?
 
 # Overview
+- [Paper Details](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#research-question)
+- [tl;dr](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#tldr)
+- [Reproduction](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#reproduction)
+- [Dependencies](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#dependencies)
+- [Resources](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#resources)
+- [Experimental Manupilation](https://github.com/deniz0zn/JBC090-Interim-Assignment/edit/main/README.md#experimental-manupilation)
+      
 
 ## Paper Details
 
@@ -69,28 +74,38 @@ The following code functions with the up-to-date version of the given libraries.
 The total runtime for all computations was approximately 7 hours, 41 minutes, and 32 seconds on a system with an Intel i3-12300F CPU, GTX 1070 Ti GPU, and 16GB RAM.
 Based on a power consumption of 0.108kW and the global average emission factor of 0.475 kg CO2 per kWh, the estimated CO2 emissions for this project are ~0.394 kg CO2.
 
-## Configuration
-
-#### General Parameters (config.py):
-- `__RANDOM_STATE__`: Change the random state for reproducibility.
-- `test_size`: Adjust the proportion of the dataset allocated to training and testing.
-
-#### Fine-Tuning (config.py and config_fine_tune.py):
-
-1. **Set `__DEBUG__` in `config.py`**:
-   - `True`: Use pre-existing fine-tuned hyperparameters from `config_fine_tune.py`.
-   - `False`: Enable runtime fine-tuning to optimize model performance.
-
-2. **Update hyperparameters in `config_fine_tune.py`**:
-   - **Logistic Regression**: Modify `penalty`, `solver`, and `C`.
-   - **SVM**: Adjust `C` and `gamma`.
-
 
 ## Experimental Manupilation
+### General Parameters and Debug (config.py)
+```Python
+__RANDOM_STATE__ = 42
+test_size = 0.3
+__DEBUG__ = True
+```
+The `__RANDOM_STATE__` parameter controls the random state for reproducibility in dataset splitting and model initialization. Changing this value ensures consistent dataset splits for debugging and reproducibility. The `test_size` parameter adjusts the proportion of the dataset allocated to training and testing. Increasing the `test_size` reduces the training dataset size, impacting model training and evaluation reliability.
 
-Check in with the group
+The `__DEBUG__` parameter controls whether the model uses pre-configured fine-tuned hyperparameters or enables runtime fine-tuning via grid search. When set to `True`, the model uses the pre-defined parameters from `config_fine_tune.py`. When set to `False`, it performs runtime fine-tuning, which may improve model performance but increases computation time.
 
-A section dedicated to experimental manipulation. What elements can be changed to change the experiment? Where do we change those? As you can see I even have specific line numbers in these (it’d probably be better if they were linked, but anyway).
+
+
+### Fine-Tuning Parameters
+```Python
+# Preconfigured fine-tuned hyperparameters for Logistic Regression for each dataset
+gen_logistic_parameters = {"penalty": "l2","C": 100,"solver" : "sag"}
+pol_logistic_parameters = {"penalty": "l2","C": 100,"solver": "saga"}
+
+# Preconfigured fine-tuned hyperparameters for Logistic Regression
+svm_parameters = {"C": 100, "gamma": 0.1}
+```
+
+#### Logistic Regression (config_fine_tune.py)
+The `penalty` parameter specifies the type of regularization applied to the model, with options including `l1`, `l2`, `elasticnet`, and `none`. Adjusting this parameter influences how the model handles overfitting. The `solver` parameter determines the optimization algorithm used for fitting the model, with options like `newton-cg`, `lbfgs`, `liblinear`, `sag`, and `saga`. Selecting different solvers can improve convergence or computation time based on the dataset size and characteristics. The `C` parameter represents the inverse of the regularization strength. Smaller values increase regularization, reducing the risk of overfitting.
+
+#### SVM (config_fine_tune.py)
+The `C` parameter controls the regularization strength for the SVM model. Higher values prioritize correctly classifying training data, which can reduce generalization to unseen data. The `gamma` parameter, which can take values such as `scale`, `auto`, or specific numerical values, determines the influence of a single training example on the decision boundary. Adjusting this parameter can refine the granularity of the decision boundary.
+
+---
+
 
 ## Modular elements of the research code
 
