@@ -23,7 +23,7 @@ How can stylometry and NLP techniques be combined to develop robust, interpretab
 
 Abstract of our paper:
 
-This research investigates the use of natural language processing (NLP) to overcome segmentation tasks, and explainable AI methods to search for more insight in the model choices. Our framework uses Support Vector Machines (SVM) with FastText embeddings and Logistic Regression with term frequency-inverse document frequency (TF-IDF) to profile Reddit users based on generations and their political leaning. Findings indicate that both models are successful after fine-tuning, and incorporating political leaning as a predictor doesn’t affect the model performance or the related metrics. However, LIME highlighted each generation and political group's ‘’unique features’’ that affected the model's choices. The feature importance rates helped us gain insight into each group's characteristic word choices and therefore any underlying meaning. 
+This research investigates the use of natural language processing (NLP) to overcome segmentation tasks, and explainable AI methods to search for more insight in the model choices. Our framework uses Support Vector Machines (SVM) with FastText embeddings and Logistic Regression with term frequency-inverse document frequency (TF-IDF) to profile Reddit users based on generations and their political leaning. Findings indicate that both models are successful after fine-tuning, and incorporating political leaning as a predictor does not affect the model performance or the related metrics. However, LIME highlighted each generation and political group's ‘’unique features’’ that affected the model's choices. The feature importance rates helped us gain insight into each group's characteristic word choices and therefore any underlying meaning. 
 
 ## tl;dr
 
@@ -31,7 +31,7 @@ A tl;dr which highlights some points why someone who found your research code sh
 
 - Solved the Imbalance problem in both age and political leaning datasets by adjusting model weights.
 - Trained and predicted each model on both datasets independently.
-- Fine-tuned each model for better perfromance for each classification task.
+- Fine-tuned each model for better performance for each classification task.
 - Used political leaning as a predictor for predicting Generation.
 - Checked the differences in metrics and employed explainable AI libraries to see underlying meanings behind important features.
 - Evaluated the models with metrics regarding robustness and performance.
@@ -108,9 +108,3 @@ The `penalty` parameter specifies the type of regularization applied to the mode
 The `C` parameter controls the regularization strength for the SVM model. Higher values prioritize correctly classifying training data, which can reduce generalization to unseen data. The `gamma` parameter, which can take values such as `scale`, `auto`, or specific numerical values, determines the influence of a single training example on the decision boundary. Adjusting this parameter can refine the granularity of the decision boundary.
 
 ---
-
-
-## Modular elements of the research code
-
-Ideally: a section on how to add to the research code. Which components are modular and can be swapped out? How does one do that?
-
