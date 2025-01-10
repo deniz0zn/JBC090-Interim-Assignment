@@ -98,7 +98,7 @@ def run_experiments(path: str, mode: str):
     print(f"Processing dataset at {path} for target mode: {mode}...")
     dataset = Dataset(path)
     print(dataset)  # Print dataset summary
-    reader = Reader(path, tokenize=False)
+    reader = Reader(path, tokenize=True)
     vectorizer = TfidfVectorizer(use_idf=True, max_df=0.95)
     preprocessor = DataPreprocessor(reader, vectorizer, mode)
     run_models = RunModels(preprocessor, path)
