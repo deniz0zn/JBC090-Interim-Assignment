@@ -21,6 +21,10 @@ How can stylometry and NLP techniques be combined to develop robust, interpretab
   
 ## Paper Details
 
+Abstract of our paper:
+
+This research investigates the use of natural language processing (NLP) to overcome segmentation tasks, and explainable AI methods to search for more insight in the model choices. Our framework uses Support Vector Machines (SVM) with FastText embeddings and Logistic Regression with term frequency-inverse document frequency (TF-IDF) to profile Reddit users based on generations and their political leaning. Findings indicate that both models are successful after fine-tuning, and incorporating political leaning as a predictor doesn’t affect the model performance or the related metrics. However, LIME highlighted each generation and political group's ‘’unique features’’ that affected the model's choices. The feature importance rates helped us gain insight into each group's characteristic word choices and therefore any underlying meaning. 
+
 ## tl;dr
 
 A tl;dr which highlights some points why someone who found your research code should care about this repository.
