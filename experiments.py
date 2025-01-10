@@ -36,7 +36,7 @@ class RunModels:
         """
         print("Running default logistic regression...")
         # return LogisticModel(DataPreprocessor(self.df, self.tfidf, self.preprocessor.mode)).fit()
-        return LogisticModel(DataPreprocessor(self.df, self.vectorizer, self.preprocessor.mode)).fit()
+        return LogisticModel(self.preprocessor).fit()
 
     def run_fine_tuned_logistic_regression(self, pred_pol=False) -> LogisticRegression:
         """
@@ -44,7 +44,7 @@ class RunModels:
         :return: logistic regression model with fine-tuned parameters.
         """
         print("Running fine-tuned logistic regression...")
-        return LogisticModel(DataPreprocessor(self.df, self.vectorizer, self.preprocessor.mode), fine_tuned=True, pred_pol=pred_pol).fit()
+        return LogisticModel(self.preprocessor, fine_tuned=True, pred_pol=pred_pol).fit()
 
     def run_default_svm(self) -> SVC:
         """
