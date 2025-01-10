@@ -16,7 +16,7 @@ How can stylometry and NLP techniques be combined to develop robust, interpretab
 - [Reproduction](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#reproduction)
 - [Dependencies](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#dependencies)
 - [Resources](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#resources)
-- [Experimental Manupilation](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#experimental-manipulation)
+- [Experimental Manupilation](https://github.com/deniz0zn/JBC090-Interim-Assignment/tree/main?tab=readme-ov-file#experimental-manupilation)
 
   
 ## Paper Details
