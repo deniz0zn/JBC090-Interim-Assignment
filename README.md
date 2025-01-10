@@ -54,7 +54,7 @@ The following code functions with the up-to-date version of the given libraries.
 ## Resources
 
 The total runtime for all computations was approximately 7 hours, 41 minutes, and 32 seconds on a system with an Intel i3-12300F CPU, GTX 1070 Ti GPU, and 16GB RAM.
-Based on a power consumption of 0.288 kW and the global average emission factor of 0.475 kg CO2 per kWh, the estimated CO2 emissions for this project are ~1.05 kg CO2.
+Based on a power consumption of 0.108kW and the global average emission factor of 0.475 kg CO2 per kWh, the estimated CO2 emissions for this project are ~0.394 kg CO2.
 
 ## Configuration
 
