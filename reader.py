@@ -8,8 +8,22 @@ from nltk.corpus import wordnet
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import nltk
+from nltk.data import find
 from config import __RANDOM_STATE__,test_size
-# nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger', 'stopwords', 'omw-1.4'])
+
+nltk_resources = {
+    "punkt": 'tokenizers/punkt',
+    "wordnet": 'corpora/wordnet',
+    "averaged_perceptron_tagger": 'taggers/averaged_perceptron_tagger',
+    "stopwords": 'corpora/stopwords',
+    "omw-1.4": 'corpora/omw-1.4',
+}
+for resource_name, resource_path in nltk_resources.items():
+    try:
+        nltk.data.find(resource_path)
+    except LookupError:
+        print(f"{resource_name} not found. Downloading...")
+        nltk.download(resource_name)
 
 
 class Dataset:
