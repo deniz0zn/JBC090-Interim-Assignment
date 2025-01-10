@@ -74,22 +74,25 @@ def X_with_pred_pol_lean(df, tfidf, model):
     X_pol = pd.get_dummies(df['predicted_political_leaning'], drop_first=True)
     X_combined = hstack([X_post, X_pol.values]).tocsr()
     print(f"Shape of X_combined: {X_combined.shape}\nShape of model.coef_: {model.coef_.shape}")
+    right = True #False?
 
-    try:
-        if X_combined.shape[1] != model.coef_.shape[1]:
-            print(
-                f"Feature mismatch detected: X_combined has {X_combined.shape[1]} features, but model expects {model.coef_.shape[1]} features.")
-    except ValueError as e:
-        print(f"Error: {e}\nAttempting to debug and fix feature mismatch...")
-        feature_diff = X_combined.shape[1] - model.coef_.shape[1]
-        if feature_diff > 0:
-            print(f"X_combined has {feature_diff} extra features. Trimming features...")
-            X_combined = X_combined[:, :model.coef_.shape[1]]
-        elif feature_diff < 0:
-            print(f"X_combined is missing {-feature_diff} features. Adding zero-padding...")
-            missing_features = -feature_diff
-            zero_padding = csr_matrix((X_combined.shape[0], missing_features))
-            X_combined = hstack([X_combined, zero_padding]).tocsr()
+    while not right:
+        try:
+            if X_combined.shape[1] != model.coef_.shape[1]:
+                print(
+                    f"Feature mismatch detected: X_combined has {X_combined.shape[1]} features, but model expects {model.coef_.shape[1]} features.")
+        except ValueError as e:
+            print(f"Error: {e}\nAttempting to debug and fix feature mismatch...")
+            feature_diff = X_combined.shape[1] - model.coef_.shape[1]
+            if feature_diff > 0:
+                print(f"X_combined has {feature_diff} extra features. Trimming features...")
+                X_combined = X_combined[:, :model.coef_.shape[1]]
+            elif feature_diff < 0:
+                print(f"X_combined is missing {-feature_diff} features. Adding zero-padding...")
+                missing_features = -feature_diff
+                zero_padding = csr_matrix((X_combined.shape[0], missing_features))
+                X_combined = hstack([X_combined, zero_padding]).tocsr()
+                right = X_combined.shape[1] == model.coef_.shape[1]
 
     return X_combined
 
@@ -102,6 +105,6 @@ def run_fine_tuned_log_with_pol(X, df):
     model = LogisticRegression(class_weight="balanced", penalty=penalty, C=C, solver=solver, max_iter=1000,
                                random_state=__RANDOM_STATE__)
     print(f"Fitting the model with parameters: {model.get_params()}\n")
-    model.fit(X_test, y_test)
+    model.fit(X_train, y_train)
     print(f"Model fitted. Metrics:\n{Metrics(X_test, y_test, model)}")
     return model

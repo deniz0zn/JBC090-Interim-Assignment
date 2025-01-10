@@ -110,7 +110,7 @@ class LogisticModel:
         X_train_vec, X_test_vec, y_train, y_test = self.preprocessor.preprocess()
 
         print(f"Fitting the model with parameters: {self.model.get_params()}\n")
-        self.model.fit(X_test_vec, y_test)
+        self.model.fit(X_train_vec, y_train)
         print(f"Model fitted. Metrics:\n{Metrics(X_test_vec, y_test, self.model)}")
 
         return self.model

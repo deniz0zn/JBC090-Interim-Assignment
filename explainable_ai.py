@@ -74,7 +74,7 @@ class LimeEvaluator:
         :return: sampled dataframe.
         """
         df_sample = self.df.groupby("generation")[["post", "predicted_political_leaning",
-                                                   "generation"]].apply(lambda x: x.sample(n=100, replace=True,
+                                                   "generation"]].apply(lambda x: x.sample(n=10, replace=True,
                                                                                            random_state=self.random_state))
         df_sample = df_sample.reset_index(drop=True)
         return df_sample
@@ -92,6 +92,7 @@ class LimeEvaluator:
         Initialize explainer and add most important features to each generation and political leaning.
         :return: dictionary of all dataframes containing most important features.
         """
+        print('running')
         explainer = LimeTextExplainer(class_names=self.model.classes_)
         generations = ['Baby boomers', 'Generation X', 'Millennials', 'Generation Z']
         leanings = ['left', 'center', 'right']
