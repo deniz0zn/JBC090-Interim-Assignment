@@ -129,10 +129,10 @@ if __name__ == "__main__":
     t0 = time.time()
 
     print("--- BIRTH YEAR DATASET ---")
-    df_generation, run_class = run_experiments("datasets/test.csv", "generation")
+    df_generation, run_class = run_experiments(BY_PATH, "generation")
 
     print("--- POLITICAL LEANING DATASET ---")
-    political_leaning_model, political_leaning_vectorizer = run_experiments('datasets/test2.csv', "political_leaning")
+    political_leaning_model, political_leaning_vectorizer = run_experiments(PL_PATH, "political_leaning")
 
     print("--- Predicting Political Leaning for Generation Dataset ---")
     run_with_pol_lean(df_generation, political_leaning_model, political_leaning_vectorizer, run_class)
